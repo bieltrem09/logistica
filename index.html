@@ -242,6 +242,14 @@
             </span>
           </h1>
 
+          <!-- Telemetria do guindaste (só com animação): prumo, altura até o pátio e alvo de pouso -->
+          <svg class="hero__hud" aria-hidden="true" focusable="false">
+            <line class="hud__plumb" x1="0" y1="0" x2="0" y2="0"/>
+            <path class="hud__target" d="M0 0"/>
+            <text class="hud__alt">ALT 00,0 m</text>
+            <text class="hud__dock" text-anchor="end">Doca 07 · Pátio A</text>
+          </svg>
+
           <!-- Camada 3: contêiner suspenso (PNG recortado, com vetor de reserva) -->
           <div class="hero__cargo media" data-anim="parallax" data-speed="1.15">
             <span class="hero__cable" aria-hidden="true"></span>
@@ -384,12 +392,22 @@
 
           <!-- Pronto para pin + scroll horizontal -->
           <div class="modais__pin" data-anim="pin">
+            <!-- O contêiner do hero, trocando de veículo entre os capítulos (só com animação) -->
+            <div class="journey-cargo" aria-hidden="true"><span class="journey-cargo__box"></span><span class="journey-cargo__id micro">VTRU 204816-3</span></div>
             <div class="modais__track" data-anim="horizontal">
 
               <article class="modal-strip modal-strip--mar" data-theme="blue" aria-labelledby="modal-mar">
                 <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9">
                   <img src="assets/img/modal-mar.webp" width="1200" height="2000" alt="" loading="lazy" decoding="async">
                 </div>
+                <svg class="modal-strip__route" aria-hidden="true" focusable="false">
+                  <path class="route__plan" d="M0 0"/>
+                  <path class="route__done" d="M0 0"/>
+                  <path class="route__dot" d="M0 0"/>
+                  <path class="route__dot route__dot--end" d="M0 0"/>
+                  <text class="route__label">Alto-mar · Rumo 312°</text>
+                  <text class="route__label">Porto de Santos · Cais 3</text>
+                </svg>
                 <div class="modal-strip__vehicle modal-strip__vehicle--ship" data-anim="parallax" data-speed="1.08">
                   <span class="vehicle__wake" aria-hidden="true"></span>
                   <img src="assets/img/veiculo-navio.png" data-fallback="assets/img/fallback/navio.svg" width="260" height="1100" alt="" loading="lazy" decoding="async">
@@ -414,6 +432,14 @@
                 <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9">
                   <img src="assets/img/modal-terra.webp" width="1125" height="2000" alt="" loading="lazy" decoding="async">
                 </div>
+                <svg class="modal-strip__route" aria-hidden="true" focusable="false">
+                  <path class="route__plan" d="M0 0"/>
+                  <path class="route__done" d="M0 0"/>
+                  <path class="route__dot" d="M0 0"/>
+                  <path class="route__dot route__dot--end" d="M0 0"/>
+                  <text class="route__label">Cais 3 · Coleta</text>
+                  <text class="route__label">GRU · Terminal de cargas</text>
+                </svg>
                 <div class="modal-strip__vehicle modal-strip__vehicle--truck" data-anim="parallax" data-speed="1.12">
                   <img src="assets/img/veiculo-caminhao.png" data-fallback="assets/img/fallback/caminhao.svg" width="130" height="780" alt="" loading="lazy" decoding="async">
                 </div>
@@ -437,6 +463,14 @@
                 <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9">
                   <img src="assets/img/modal-ar.webp" width="1200" height="2000" alt="" loading="lazy" decoding="async">
                 </div>
+                <svg class="modal-strip__route" aria-hidden="true" focusable="false">
+                  <path class="route__plan" d="M0 0"/>
+                  <path class="route__done" d="M0 0"/>
+                  <path class="route__dot" d="M0 0"/>
+                  <path class="route__dot route__dot--end" d="M0 0"/>
+                  <text class="route__label">GRU · Pista 09L</text>
+                  <text class="route__label">Destino · Manaus/AM</text>
+                </svg>
                 <span class="modal-strip__clouds" aria-hidden="true"></span>
                 <div class="modal-strip__vehicle modal-strip__vehicle--plane" data-anim="parallax" data-speed="1.2">
                   <img src="assets/img/veiculo-aviao.png" data-fallback="assets/img/fallback/aviao.svg" width="800" height="800" alt="" loading="lazy" decoding="async">

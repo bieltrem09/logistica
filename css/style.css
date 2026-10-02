@@ -896,6 +896,11 @@ button {
   filter: none;
 }
 
+/* Com a foto carregada, o vetor de reserva não aparece junto */
+.hero__cargo:not(.is-missing) > .hero__cargo-svg {
+  display: none;
+}
+
 .cnt-mono {
   font-family: var(--font-mono);
   font-weight: 500;
@@ -1331,6 +1336,10 @@ button {
 .modal-strip__tab,
 .modal-strip__tel,
 .modal-strip__clouds,
+.modal-strip__route,
+.journey-cargo,
+.hero__hud,
+.hero__rope,
 .hero__gl,
 .hero__doors,
 .hero-spacer,
@@ -1474,7 +1483,7 @@ button {
   top: var(--cut-top);
   left: var(--cut-left);
   right: var(--cut-right);
-  height: 1.1em;
+  height: var(--cut-h, 1.1em);
   --media-bg: var(--blue);
 }
 
@@ -1519,7 +1528,7 @@ button {
   }
 
   .cut-title__media {
-    height: 0.92em;
+    height: var(--cut-h, 0.92em);
   }
 
   .services__intro {
@@ -2701,6 +2710,76 @@ html.has-3d .hero__tag::before {
   display: none;
 }
 
+/* Telemetria do guindaste: prumo, altura e alvo de pouso */
+html.has-motion .hero__hud {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* Laranja e tinta: legíveis tanto sobre o céu quanto sobre as letras claras do título */
+.hud__plumb {
+  stroke: var(--signal);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 6;
+}
+
+.hud__target {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 3;
+  transition: stroke var(--dur-base) var(--ease-out);
+}
+
+.hero__hud text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+
+.hero__hud.is-locked .hud__target {
+  stroke: var(--signal);
+}
+
+.hero__hud.is-locked .hud__alt {
+  fill: var(--signal);
+}
+
+/* Vista 2D (foto real ou vetor): o cabo é desenhado à parte, do guindaste até o gancho */
+html.has-motion:not(.has-3d) .hero__rope {
+  position: absolute;
+  top: 0;
+  left: -1.5px;
+  z-index: 3;
+  display: block;
+  width: 3px;
+  height: 1px;
+  background: var(--ink);
+  transform-origin: 50% 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+html.has-motion:not(.has-3d) .hero__cable {
+  visibility: hidden;
+}
+
+html.has-motion:not(.has-3d) .hero__cargo {
+  will-change: transform;
+}
+
 html.has-motion .hero__doors {
   position: absolute;
   inset: 0;
@@ -2734,7 +2813,7 @@ html.has-motion .hero__doors {
   top: 0;
   width: 200%;
   height: 100%;
-  background: var(--signal) var(--door-tex, none) 50% 50% / cover no-repeat;
+  background: var(--signal) var(--door-tex, none) var(--door-pos, 50% 50%) / var(--door-size, cover) no-repeat;
 }
 
 .door--left .door__face {
@@ -2831,6 +2910,124 @@ html.has-motion .modal-strip__clouds {
   pointer-events: none;
 }
 
+/* Jornada: rota de cada capítulo, em px da faixa aberta (74% da largura) */
+html.has-motion .modal-strip__route {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  display: block;
+  height: 100%; /* largura em px vem do JS: a da faixa aberta */
+  overflow: visible;
+  color: var(--fg);
+  pointer-events: none;
+}
+
+.route__plan,
+.route__done,
+.route__dot {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.route__plan {
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-dasharray: 2 7;
+  opacity: 0;
+}
+
+.route__done {
+  stroke: var(--signal);
+  stroke-width: 3;
+  stroke-linecap: square;
+}
+
+/* Pontos de origem e destino: traço de comprimento zero, sempre quadrado mesmo com a rota comprimida */
+.route__dot {
+  stroke: currentColor;
+  stroke-width: 11;
+  stroke-linecap: square;
+  opacity: 0;
+}
+
+.route__dot--end {
+  stroke: var(--signal);
+}
+
+.modal-strip__route.is-arrived .route__dot--end {
+  animation: vetor-arrive 1.4s var(--ease-out) infinite;
+}
+
+@keyframes vetor-arrive {
+  0% { stroke-width: 11; }
+  40% { stroke-width: 26; stroke-opacity: 0.35; }
+  100% { stroke-width: 11; stroke-opacity: 1; }
+}
+
+.route__label {
+  fill: currentColor;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0;
+}
+
+/* Veículos na rota: posição e rumo vêm do JS (x, y, rotation em px da faixa) */
+html.has-motion .modal-strip__vehicle {
+  left: 0;
+  top: 0;
+  rotate: none;
+  will-change: transform;
+}
+
+/* Balanço de mar contínuo: o navio nunca fica parado na água, nem com a rolagem parada */
+html.has-motion .modal-strip__vehicle--ship img {
+  animation: vetor-swell 5.2s ease-in-out infinite;
+}
+
+@keyframes vetor-swell {
+  0%, 100% { transform: rotate(-0.7deg) scale(1); }
+  50% { transform: rotate(0.7deg) scale(1.01); }
+}
+
+/* O contêiner VTRU 204816-3 visto de cima, trocando de veículo */
+html.has-motion .journey-cargo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 7;
+  translate: 0 -50%;
+  transform-origin: 0 50%;
+  visibility: hidden; /* só o acordeão do desktop mostra (autoAlpha) */
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.journey-cargo__box {
+  width: 46px;
+  height: 18px;
+  margin-left: -23px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 5px, rgba(0, 0, 0, 0.18) 5px 6px),
+    var(--signal);
+  outline: 2px solid var(--ink);
+  box-shadow: 8px 10px 0 rgba(12, 12, 12, 0.3);
+}
+
+.journey-cargo__id {
+  padding: 4px 6px 3px;
+  background: var(--ink);
+  color: var(--paper);
+  white-space: nowrap;
+}
+
 /* Fundos de reserva em movimento: --bgy desloca mar, asfalto e grade */
 html.has-motion .modal-strip__bg {
   background-position: 0 var(--bgy, 0px), 0 0;
@@ -2876,6 +3073,37 @@ html.has-motion .services {
 html.has-motion .cut-title__media,
 html.has-motion .cut-title__word--ghost {
   will-change: clip-path, left, right;
+}
+
+/* Guindaste: cabo e lingas seguram o contêiner azul até ele assentar na palavra */
+html.has-motion .cut-title::before,
+html.has-motion .cut-title::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  bottom: calc(100% - var(--cut-top));
+  pointer-events: none;
+  transform-origin: 50% 0;
+}
+
+html.has-motion .cut-title::before {
+  left: calc((100% + var(--cut-left) - var(--cut-right)) / 2 - 1px);
+  width: 2px;
+  height: 140svh;
+  margin-bottom: 0.32em;
+  background: var(--ink);
+  transform: scaleY(var(--cable, 1));
+}
+
+html.has-motion .cut-title::after {
+  --sling: transparent calc(50% - 1px), var(--ink) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px);
+  left: calc(var(--cut-left) + 0.04em);
+  right: calc(var(--cut-right) + 0.04em);
+  height: 0.32em;
+  background:
+    linear-gradient(to top right, var(--sling)) 0 0 / 50% 100% no-repeat,
+    linear-gradient(to top left, var(--sling)) 100% 0 / 50% 100% no-repeat;
+  opacity: var(--cable, 1);
 }
 
 /* ---------- Pátio: carrossel fixo ---------- */
@@ -3055,4 +3283,30 @@ html.has-cursor .cursor__label {
 
 html.has-cursor #cursor.has-label .cursor__label {
   opacity: 1;
+}
+
+/* ---------- Microinterações ---------- */
+/* Indicador "ao vivo" da operação (legenda da foto do Sobre) */
+.about__caption span.is-live::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  background: var(--signal);
+  vertical-align: 1px;
+  animation: vetor-live 1.6s steps(2, jump-none) infinite;
+}
+
+@keyframes vetor-live {
+  50% { opacity: 0.15; }
+}
+
+/* Contêineres do pátio: o cartão em foco responde ao ponteiro */
+html.has-motion .cargo .pill .icon {
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+html.has-motion .cargo:hover .pill .icon {
+  transform: translateX(4px);
 }

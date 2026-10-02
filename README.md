@@ -21,7 +21,18 @@ Abra o endereço exibido. Um servidor é necessário porque `js/main.js` é um E
 index.html                 Página: entrada + hero em 4 camadas + 8 seções + rodapé
 css/style.css              Tokens, temas por seção, layout mobile-first; seção 19 = estados com animação
 js/main.js                 Cabeçalho que inverte a cor, menu em tela cheia, fallback de imagens, rastreio
-js/motion.js               Toda a animação (GSAP + ScrollTrigger + ScrollSmoother + SplitText)
+js/motion.js               Orquestrador da animação: entrada, ScrollSmoother e a ordem das seções
+js/animations/
+  utils.js                 Ajudantes: perfil de velocidade (trapézio), mola, ponto na rota, formato pt-BR
+  text.js                  Máscara por linha e SplitText
+  hero.js                  Hero: física, telemetria do guindaste, parallax, portas (initHeroAnimation)
+  about.js                 01: manifesto ligado à rolagem + ficha lateral (initSection2/3Animation)
+  journey.js               02: MAR → TERRA → AR com rotas e a carga trocando de veículo (initLogisticsJourney)
+  services.js              03: guindaste baixa o contêiner azul, que vira campo (initSection5Animation)
+  yard.js                  03b: carrossel do pátio com pêndulo (initContainerCarousel)
+  statistics.js            04: contadores precisos (initStatistics, countUp)
+  sections.js              05–08, rodapé, cabeçalhos de seção, fade-ups, encaixe dos blocos
+  pointer.js               Cursor, magnéticos, profundidade com o mouse, âncoras
 js/hero-3d.js              Contêiner 3D do hero (Three.js)
 js/hero-rig.js             Geometria do hero + piloto que converte rolagem em comando de guindaste
 js/cable-physics.js        Física do cabo: balanço, profundidade, giro, elasticidade
@@ -38,11 +49,19 @@ A sequência completa está descrita em `DIRECAO-DE-ARTE.md` (seção 4). Onde a
 
 | O quê | Onde |
 |---|---|
-| Duração das fases do hero (descida, aproximação, portas) | `HERO_PHASES` em `js/hero-rig.js` e altura do `.hero-spacer` (1,5 × hero) em `js/motion.js` |
+| Fases do hero (espera, descida, aproximação, portas) | `HERO_PHASES` em `js/hero-rig.js` e altura do `.hero-spacer` (1,5 × hero) em `js/animations/hero.js` |
+| Antecipação (cabo tensiona, carro anda antes da carga) | `preload` / `lead` em `js/hero-rig.js` |
 | Peso do balanço (gravidade, amortecimento, quique do cabo) | constantes em `js/cable-physics.js` |
 | Quanto a rolagem rápida sacode o contêiner | `targetX` / `targetZ` em `js/hero-rig.js` |
-| Duração do tríptico e de cada veículo | `buildModais()` em `js/motion.js` (`end: vh() * 5`) |
-| Velocidade do carrossel e encaixe | `buildYard()` em `js/motion.js` |
+| Rotas do navio, caminhão e avião | `ROUTES` em `js/animations/journey.js` (em px da faixa aberta) |
+| Aceleração e frenagem de cada veículo | `PROFILES` em `js/animations/journey.js` |
+| Duração da jornada | `end: vh() * 6` (desktop) e `vh() * 4.2` (celular) em `js/animations/journey.js` |
+| Peso do contêiner azul (mola) | `createSpring({ stiffness, damping })` em `js/animations/services.js` |
+| Pêndulo do pátio e encaixe | `pendulum` e `snap` em `js/animations/yard.js` |
+
+**Contêiner do hero:** se existir `assets/img/hero-container.png` (recorte com fundo transparente, 1000 × 780,
+lingas no topo, como o vetor), o hero usa a foto real com a mesma física e as portas recebem a foto.
+Sem o arquivo, roda o contêiner 3D; sem WebGL, o vetor 2D.
 
 **Robustez:** a tela de entrada some sozinha em 9 s se algo falhar. Sem WebGL, o mesmo movimento roda no vetor 2D.
 Com `prefers-reduced-motion`, sem JS ou sem acesso ao CDN, o site fica no estado estático completo.

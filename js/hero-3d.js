@@ -69,6 +69,7 @@ export function createHero3D({ canvas, textures }) {
   // Estado de layout (mundo)
   let G = null;
   let k = 1;
+  let hookY = 0;
   const target = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
 
   const tmpA = new THREE.Vector3();
@@ -119,7 +120,8 @@ export function createHero3D({ canvas, textures }) {
     tmpA.set(0, 0, 0);
     corners.forEach((c, i) => placeCylinder(slings[i], tmpA, tmpB.set(...c), 0.0028 * G.w * k));
     hookBlock.scale.set(0.05 * G.w * k, 0.062 * G.w * k, 0.034 * G.w * k);
-    hookBlock.position.set(0, 0.044 * G.w * k, 0);
+    hookY = 0.044 * G.w * k;
+    hookBlock.position.set(0, hookY, 0);
     ring.scale.setScalar(0.011 * G.w * k);
     ring.position.set(0, 0.002 * G.w * k, 0);
 
@@ -150,6 +152,12 @@ export function createHero3D({ canvas, textures }) {
     toWorld(pivot, pose.tx, G.pivotY, pose.tz);
     placeCylinder(mainCable, pivot, rig.position, 0.0042 * G.w * k);
 
+    // Movimento secundário: o gancho segue o cabo; lingas e contêiner atrasam (alpha) em relação a ele
+    const lag = pose.alpha * (1 - a);
+    hookBlock.position.set(0, hookY, 0).applyAxisAngle(axisZ, -lag);
+    hookBlock.quaternion.setFromAxisAngle(axisZ, -lag);
+    ring.quaternion.setFromAxisAngle(axisZ, -lag);
+
     // As portas ficam com a cor exata da textura quando cobrem a tela
     doorMat.color.setScalar(0.8 + 0.2 * a);
 
@@ -165,9 +173,20 @@ export function createHero3D({ canvas, textures }) {
     return { x: ((tagWorld.x + 1) / 2) * G.W, y: ((1 - tagWorld.y) / 2) * G.H };
   }
 
+  /** Centro da base do contêiner, em px do hero (prumo da telemetria). */
+  const baseLocal = new THREE.Vector3(0, -0.5, 0);
+  const baseWorld = new THREE.Vector3();
+  function basePoint() {
+    if (!G) return null;
+    baseWorld.copy(baseLocal);
+    box.localToWorld(baseWorld);
+    baseWorld.project(camera);
+    return { x: ((baseWorld.x + 1) / 2) * G.W, y: ((1 - baseWorld.y) / 2) * G.H };
+  }
+
   function dispose() {
     renderer.dispose();
   }
 
-  return { layout, render, tagPoint, dispose };
+  return { layout, render, tagPoint, basePoint, dispose };
 }

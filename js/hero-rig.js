@@ -8,9 +8,14 @@ import { CablePhysics } from './cable-physics.js';
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 const easeInOutSine = (t) => -(Math.cos(Math.PI * t) - 1) / 2;
 const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+const smoothstep = (a, b, v) => {
+  const t = clamp((v - a) / (b - a), 0, 1);
+  return t * t * (3 - 2 * t);
+};
 
 /** Fases do hero fixado, em progresso da rolagem (0–1). */
 export const HERO_PHASES = {
+  holdEnd: 0.07, // o guindaste tensiona o cabo e o carro se reposiciona: a carga ainda não desce
   lowerEnd: 0.34, // contêiner desce balançando
   approachEnd: 0.6, // gira e vem até a câmera; as portas enchem a tela
 };
@@ -55,9 +60,9 @@ export function createDriver() {
   }
 
   function update(dt) {
-    const { lowerEnd, approachEnd } = HERO_PHASES;
+    const { holdEnd, lowerEnd, approachEnd } = HERO_PHASES;
     const p = state.progress;
-    const pl = clamp(p / lowerEnd, 0, 1);
+    const pl = clamp((p - holdEnd) / (lowerEnd - holdEnd), 0, 1);
     const pa = clamp((p - lowerEnd) / (approachEnd - lowerEnd), 0, 1);
     const el = easeInOutSine(pl);
 
@@ -65,9 +70,18 @@ export function createDriver() {
     state.velS += (state.vel - state.velS) * Math.min(1, dt * 7);
     state.vel *= Math.pow(0.04, dt);
 
-    const Lcmd = geom.L0 + state.introOffset + el * geom.lowerPx;
+    // Antecipação: antes de descer, o cabo tensiona (a carga sobe um pouco) e o carro anda primeiro;
+    // o contêiner só acompanha com atraso, como uma carga de verdade.
+    const hold = smoothstep(0, holdEnd, p);
+    const preload = 0.022 * geom.H * hold * (1 - smoothstep(holdEnd, holdEnd + 0.08, p));
+    const lead = 0.035 * geom.W * hold * (1 - el);
+
+    const Lcmd = geom.L0 + state.introOffset - preload + el * geom.lowerPx;
     const targetX =
-      geom.restX + Math.sin(Math.PI * el) * 0.1 * geom.W + clamp(-state.velS * 0.03, -0.09 * geom.W, 0.09 * geom.W);
+      geom.restX +
+      lead +
+      Math.sin(Math.PI * el) * 0.1 * geom.W +
+      clamp(-state.velS * 0.03, -0.09 * geom.W, 0.09 * geom.W);
     const targetZ = clamp(state.velS * 0.012, -0.06 * geom.H, 0.06 * geom.H);
     const psiTarget = 0.38 + el * 0.5; // portas à esquerda, girando para a câmera ao descer
 
@@ -90,6 +104,7 @@ export function createDriver() {
       hy: geom.pivotY + L * Math.cos(theta) * Math.cos(phi),
       hz: L * Math.cos(theta) * Math.sin(phi),
       lower: el,
+      hold,
       approach: easeInOutCubic(pa),
     };
   }
