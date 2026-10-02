@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>VETOR Logística — Transporte rodoviário, marítimo e aéreo | Santos/SP</title>
+  <meta name="description" content="Carga fracionada e lotação para os 27 estados, por terra, mar e ar. Armazém próprio, frota própria e rastreamento em tempo real. Cote seu frete pelo WhatsApp.">
+  <meta name="theme-color" content="#0C0C0C">
+  <link rel="canonical" href="https://www.vetorlogistica.com.br/">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+
+  <!-- Open Graph / redes sociais -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:site_name" content="VETOR Logística">
+  <meta property="og:title" content="VETOR Logística — Movemos o Brasil">
+  <meta property="og:description" content="Rodoviário, marítimo e aéreo para os 27 estados. Uma operação, um contato, rastreio em tempo real.">
+  <meta property="og:url" content="https://www.vetorlogistica.com.br/">
+  <meta property="og:image" content="https://www.vetorlogistica.com.br/assets/img/og-cover.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Contêiner laranja suspenso sobre a frase Movemos o Brasil">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="VETOR Logística — Movemos o Brasil">
+  <meta name="twitter:description" content="Rodoviário, marítimo e aéreo para os 27 estados. Cote pelo WhatsApp.">
+  <meta name="twitter:image" content="https://www.vetorlogistica.com.br/assets/img/og-cover.jpg">
+
+  <!-- Fontes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+  <link rel="preload" as="image" href="assets/img/hero-sky.webp" type="image/webp" fetchpriority="high">
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Entrada: liga a tela de carregamento antes do primeiro paint (some sozinha se o JS falhar) -->
+  <script>
+    (function () {
+      var d = document.documentElement;
+      if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      d.classList.add('is-loading');
+      window.__vetorLoadTimer = setTimeout(function () { d.classList.remove('is-loading'); }, 9000);
+    })();
+  </script>
+
+  <!-- Animação: GSAP (ScrollTrigger, ScrollSmoother, SplitText) + Three.js (importado em js/hero-3d.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollSmoother.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js" defer></script>
+  <script type="module" src="js/main.js"></script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": ["LocalBusiness", "MovingCompany"],
+    "@id": "https://www.vetorlogistica.com.br/#empresa",
+    "name": "VETOR Logística",
+    "legalName": "VETOR Logística Ltda.",
+    "description": "Transporte de cargas fracionadas e lotação para os 27 estados, por terra, mar e ar, com armazém próprio e rastreamento em tempo real.",
+    "slogan": "Movemos o Brasil.",
+    "url": "https://www.vetorlogistica.com.br/",
+    "logo": "https://www.vetorlogistica.com.br/assets/img/favicon.svg",
+    "image": "https://www.vetorlogistica.com.br/assets/img/og-cover.jpg",
+    "telephone": "+55-13-90000-0000",
+    "email": "comercial@vetorlogistica.com.br",
+    "foundingDate": "2011",
+    "priceRange": "$$",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Av. Portuária, 1500",
+      "addressLocality": "Santos",
+      "addressRegion": "SP",
+      "postalCode": "11015-000",
+      "addressCountry": "BR"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": -23.9608,
+      "longitude": -46.3336
+    },
+    "areaServed": { "@type": "Country", "name": "Brasil" },
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        "opens": "07:00",
+        "closes": "19:00"
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": "Saturday",
+        "opens": "08:00",
+        "closes": "12:00"
+      }
+    ],
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+55-13-90000-0000",
+      "contactType": "sales",
+      "areaServed": "BR",
+      "availableLanguage": ["Portuguese"]
+    },
+    "sameAs": ["https://www.instagram.com/vetorlogistica"],
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Serviços de logística",
+      "itemListElement": [
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Transporte rodoviário" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Frete marítimo" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Frete aéreo" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Armazenagem" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Distribuição" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Rastreamento" } }
+      ]
+    }
+  }
+  </script>
+</head>
+
+<body>
+  <a class="skip-link" href="#main">Pular para o conteúdo</a>
+
+  <!-- Ícones -->
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M2 12h19M14 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-arrow-ne" viewBox="0 0 24 24"><path d="M5 19 19 5M8 5h11v11" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 2v19M5 14l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="M12 22V3M5 10l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  </svg>
+
+  <!-- Camadas da próxima etapa (GSAP + ScrollTrigger + Three.js). Ocultas por padrão. -->
+  <div id="preloader" hidden aria-hidden="true">
+    <div class="preloader__shutter">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="preloader__ui">
+      <p class="preloader__brand">Vetor<span class="preloader__mark"></span></p>
+      <p class="preloader__doc micro"><span>Manifesto de carga</span><span>Doca 07 · Santos/SP</span></p>
+      <ol class="preloader__manifest micro">
+        <li><span>Carga</span><i></i><b>Conferida</b></li>
+        <li><span>Lacre</span><i></i><b>VTR-204816</b></li>
+        <li><span>Rota</span><i></i><b>Santos → Brasil</b></li>
+        <li><span>Status</span><i></i><b>Liberado</b></li>
+      </ol>
+      <p class="preloader__count"><span class="preloader__num">000</span><span class="preloader__pct">%</span></p>
+      <div class="preloader__rail"><span class="preloader__trolley"></span></div>
+      <p class="preloader__label micro"><span>Carregando a carga</span><span>Peso pesado · Prazo leve</span></p>
+    </div>
+  </div>
+  <div id="cursor" hidden aria-hidden="true">
+    <span class="cursor__dot"></span>
+    <span class="cursor__label"></span>
+  </div>
+  <canvas id="webgl" aria-hidden="true"></canvas>
+
+  <!-- Grid de 12 colunas visível -->
+  <div class="grid-overlay" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <!-- Cabeçalho fixo: inverte a cor conforme a seção (js/main.js) -->
+  <header class="site-header" id="site-header" data-theme="dark" data-state="top">
+    <div class="site-header__inner">
+      <a class="logo" href="#inicio" aria-label="VETOR Logística, voltar ao início">
+        <span class="logo__word">Vetor</span><span class="logo__mark" aria-hidden="true"></span>
+      </a>
+
+      <nav class="site-nav" aria-label="Principal">
+        <ul class="site-nav__list">
+          <li><a href="#sobre">Sobre</a></li>
+          <li><a href="#modais">Modais</a></li>
+          <li><a href="#servicos">Serviços</a></li>
+          <li><a href="#numeros">Números</a></li>
+          <li><a href="#como-funciona">Processo</a></li>
+          <li><a href="#clientes">Clientes</a></li>
+          <li><a href="#rastreamento">Rastreio</a></li>
+          <li><a href="#contato">Contato</a></li>
+        </ul>
+      </nav>
+
+      <a class="pill pill--signal site-header__cta" href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete." target="_blank" rel="noopener" aria-label="Cotar minha carga pelo WhatsApp" data-anim="magnetic">
+        <span class="site-header__cta-long">Cotar minha carga</span><span class="site-header__cta-short" aria-hidden="true">Cotar</span>
+        <svg class="icon" aria-hidden="true"><use href="#i-arrow-ne"/></svg>
+      </a>
+
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu">
+        <span class="menu-toggle__label">Menu</span>
+        <span class="menu-toggle__bars" aria-hidden="true"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Menu mobile em tela cheia -->
+  <div class="menu" id="menu" data-theme="dark" hidden>
+    <nav class="menu__nav" aria-label="Menu">
+      <ol class="menu__list">
+        <li><a href="#inicio"><span class="menu__num">00</span>Início</a></li>
+        <li><a href="#sobre"><span class="menu__num">01</span>Sobre</a></li>
+        <li><a href="#modais"><span class="menu__num">02</span>Modais</a></li>
+        <li><a href="#servicos"><span class="menu__num">03</span>Serviços</a></li>
+        <li><a href="#numeros"><span class="menu__num">04</span>Números</a></li>
+        <li><a href="#como-funciona"><span class="menu__num">05</span>Processo</a></li>
+        <li><a href="#clientes"><span class="menu__num">06</span>Clientes</a></li>
+        <li><a href="#rastreamento"><span class="menu__num">07</span>Rastreio</a></li>
+        <li><a href="#contato"><span class="menu__num">08</span>Contato</a></li>
+      </ol>
+    </nav>
+    <div class="menu__foot">
+      <p class="micro">WhatsApp (13) 90000-0000<br>comercial@vetorlogistica.com.br</p>
+      <a class="pill pill--signal" href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete." target="_blank" rel="noopener">
+        Cotar minha carga <svg class="icon" aria-hidden="true"><use href="#i-arrow-ne"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div id="smooth-wrapper">
+    <div id="smooth-content">
+      <main id="main">
+
+        <!-- ═════════ HERO ═════════ -->
+        <section class="hero" id="inicio" data-theme="dark" aria-labelledby="hero-title">
+          <!-- Camada 1: céu -->
+          <div class="hero__sky media" data-anim="parallax" data-speed="0.6">
+            <img src="assets/img/hero-sky.webp" width="2560" height="1440" alt="" fetchpriority="high" decoding="async">
+          </div>
+          <div class="hero__shade" aria-hidden="true"></div>
+
+          <!-- Camada 2: tipografia gigante -->
+          <h1 class="hero__title display" id="hero-title" data-anim="split-text" data-speed="0.85">
+            <span class="sr-only">Movemos o Brasil.</span>
+            <span class="hero__lines hero__lines--wide" aria-hidden="true">
+              <span class="line"><span class="line__inner">Movemos</span></span>
+              <span class="line line--end"><span class="line__inner">O Brasil</span></span>
+            </span>
+            <span class="hero__lines hero__lines--stack" aria-hidden="true">
+              <span class="line"><span class="line__inner">Move-</span></span>
+              <span class="line line--end"><span class="line__inner">mos</span></span>
+              <span class="line"><span class="line__inner">O Brasil</span></span>
+            </span>
+          </h1>
+
+          <!-- Camada 3: contêiner suspenso (PNG recortado, com vetor de reserva) -->
+          <div class="hero__cargo media" data-anim="parallax" data-speed="1.15">
+            <span class="hero__cable" aria-hidden="true"></span>
+            <img class="hero__cargo-img" src="assets/img/hero-container.png" width="2000" height="1560" alt="Contêiner laranja da VETOR suspenso por cabos de aço" decoding="async" fetchpriority="high">
+            <svg class="media__fallback hero__cargo-svg" viewBox="0 0 1000 780" role="img" aria-label="Contêiner laranja da VETOR suspenso por cabos de aço">
+              <defs>
+                <pattern id="cnt-ribs" width="40" height="10" patternUnits="userSpaceOnUse">
+                  <rect width="40" height="10" fill="#FF4D1A"/>
+                  <rect x="18" width="4" height="10" fill="#FF7A50"/>
+                  <rect x="22" width="12" height="10" fill="#E0400F"/>
+                  <rect x="34" width="3" height="10" fill="#C7360B"/>
+                </pattern>
+              </defs>
+              <rect x="482" y="0" width="36" height="46" fill="#0C0C0C"/>
+              <path d="M488 46h24l-5 20h-14Z" fill="#0C0C0C"/>
+              <circle cx="500" cy="80" r="12" fill="none" stroke="#0C0C0C" stroke-width="6"/>
+              <path d="M500 90 94 374M500 90l406 284" stroke="#3B3F43" stroke-width="3"/>
+              <path d="M500 90 40 374M500 90l460 284" stroke="#0C0C0C" stroke-width="5"/>
+              <rect x="20" y="372" width="960" height="400" fill="url(#cnt-ribs)"/>
+              <rect x="20" y="372" width="960" height="26" fill="#D23C0E"/>
+              <rect x="20" y="744" width="960" height="28" fill="#BC350C"/>
+              <rect x="20" y="372" width="38" height="400" fill="#D23C0E"/>
+              <rect x="942" y="372" width="38" height="400" fill="#D23C0E"/>
+              <g fill="#231510">
+                <rect x="20" y="372" width="38" height="30"/>
+                <rect x="942" y="372" width="38" height="30"/>
+                <rect x="20" y="742" width="38" height="30"/>
+                <rect x="942" y="742" width="38" height="30"/>
+              </g>
+              <g fill="#0C0C0C">
+                <rect x="28" y="381" width="22" height="12" rx="6"/>
+                <rect x="950" y="381" width="22" height="12" rx="6"/>
+                <rect x="28" y="751" width="22" height="12" rx="6"/>
+                <rect x="950" y="751" width="22" height="12" rx="6"/>
+              </g>
+              <g fill="#F7F7F7">
+                <text class="cnt-mono" x="878" y="454" text-anchor="end" font-size="34">VTRU 204816</text>
+                <text class="cnt-mono" x="911" y="453" text-anchor="middle" font-size="28">3</text>
+                <text class="cnt-mono" x="930" y="498" text-anchor="end" font-size="26">22G1</text>
+                <text class="cnt-display" x="84" y="664" font-size="200">VETOR</text>
+                <rect x="546" y="624" width="40" height="40" fill="#0C0C0C"/>
+                <text class="cnt-mono" x="86" y="704" font-size="17">MAX GROSS 30.480 KG · 67.200 LB</text>
+                <text class="cnt-mono" x="86" y="727" font-size="17">TARE 2.230 KG · 4.920 LB</text>
+              </g>
+              <rect x="892" y="424" width="38" height="38" fill="none" stroke="#F7F7F7" stroke-width="3"/>
+              <rect x="768" y="640" width="120" height="72" fill="none" stroke="#F7F7F7" stroke-width="2"/>
+              <path d="M780 662h96M780 678h72M780 694h84" stroke="#F7F7F7" stroke-width="2"/>
+            </svg>
+            <p class="hero__tag micro" aria-hidden="true">
+              <span>CNT VTRU 204816-3</span>
+              <span>22G1 · 20′ Dry</span>
+              <span>Bruto 24.000 kg</span>
+            </p>
+          </div>
+
+          <!-- Camada 3 (WebGL): contêiner 3D com física de cabo — js/hero-3d.js -->
+          <canvas class="hero__gl" aria-hidden="true"></canvas>
+
+          <!-- Transição: as portas do contêiner enchem a tela e abrem para a seção 01 -->
+          <div class="hero__doors" aria-hidden="true">
+            <div class="door door--left"><span class="door__face"></span></div>
+            <div class="door door--right"><span class="door__face"></span></div>
+          </div>
+
+          <!-- Camada 4: interface -->
+          <div class="hero__ui">
+            <p class="hero__kicker micro" data-anim="fade-up">Logística<br>Transporte<br>Armazenagem</p>
+            <p class="hero__coords micro" data-anim="fade-up">23°57′39″S<br>46°20′01″W<br>Santos — SP — BR</p>
+            <p class="hero__lead" data-anim="fade-up">Rodoviário, marítimo e aéreo para os 27 estados. Uma operação. Um contato. Rastreio em tempo real.</p>
+            <a class="btn-circle hero__cta" href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete." target="_blank" rel="noopener" data-anim="magnetic">
+              <span class="btn-circle__label">Cotar minha carga</span>
+              <svg class="icon" aria-hidden="true"><use href="#i-arrow-ne"/></svg>
+            </a>
+            <a class="hero__scroll micro" href="#sobre">Role <svg class="icon" aria-hidden="true"><use href="#i-arrow-down"/></svg></a>
+          </div>
+        </section>
+
+        <!-- Espaço de rolagem do hero fixado (só existe com animação ativa) -->
+        <div class="hero-spacer" aria-hidden="true"></div>
+
+        <!-- ═════════ 01 SOBRE ═════════ -->
+        <section class="section about" id="sobre" data-theme="light" aria-labelledby="sobre-title">
+          <div class="wrap">
+            <div class="section-head">
+              <span class="section-head__num">01</span>
+              <span class="section-head__rule" aria-hidden="true"></span>
+              <span class="section-head__label">Sobre</span>
+              <span class="section-head__meta">Desde 2011 · Porto de Santos</span>
+            </div>
+
+            <h2 class="about__title display fit" id="sobre-title" data-anim="split-text">
+              <span class="line line--end"><span class="line__inner">Sua carga</span></span>
+              <span class="line"><span class="line__inner">não espera.</span></span>
+              <span class="line"><span class="line__inner">A gente também</span></span>
+              <span class="line line--end line--punch"><span class="line__inner"><mark>não.</mark></span></span>
+            </h2>
+          </div>
+
+          <div class="about__body wrap">
+            <div class="about__text">
+              <p class="lead" data-anim="fade-up">A VETOR nasceu no Porto de Santos para resolver um problema simples: carga parada é dinheiro parado.</p>
+              <p data-anim="fade-up">Hoje levamos carga fracionada e lotação para os 27 estados, por terra, mar e ar. Armazém próprio, frota própria, rastreamento em tempo real. Sem intermediário. Sem desculpa.</p>
+
+              <dl class="spec" data-anim="stagger">
+                <div class="spec__row"><dt>Fundação</dt><dd>2011</dd></div>
+                <div class="spec__row"><dt>Base</dt><dd>Santos — SP</dd></div>
+                <div class="spec__row"><dt>Frota própria</dt><dd>340 veículos</dd></div>
+                <div class="spec__row"><dt>Armazém</dt><dd>48.000 m²</dd></div>
+                <div class="spec__row"><dt>Certificações</dt><dd>ISO 9001 · SASSMAQ</dd></div>
+              </dl>
+
+              <a class="pill" href="#modais">Ver os modais <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            </div>
+
+            <figure class="about__figure" data-anim="reveal-img">
+              <div class="about__media media media--photo" data-label="sobre-patio.webp · 1600×1067">
+                <img src="assets/img/sobre-patio.webp" width="1600" height="1067" loading="lazy" decoding="async" alt="Equipe da VETOR, de capacete e colete, caminhando entre pilhas de contêineres no pátio" data-anim="parallax" data-speed="0.92">
+              </div>
+              <figcaption class="about__caption micro">
+                <span>Fig. 01</span><span>Pátio próprio · Santos/SP</span><span>Operação 24/7</span>
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <!-- ═════════ 02 MODAIS ═════════ -->
+        <section class="modais" id="modais" data-theme="dark" aria-labelledby="modais-title">
+          <div class="modais__head wrap">
+            <div class="section-head">
+              <span class="section-head__num">02</span>
+              <span class="section-head__rule" aria-hidden="true"></span>
+              <span class="section-head__label">Modais</span>
+              <span class="section-head__meta">Intermodal · Porta a porta</span>
+            </div>
+            <h2 class="modais__title display fit" id="modais-title" data-anim="split-text">
+              <span class="line"><span class="line__inner">Três modais.</span></span>
+              <span class="line"><span class="line__inner u-signal">Um contato.</span></span>
+            </h2>
+          </div>
+
+          <!-- Pronto para pin + scroll horizontal -->
+          <div class="modais__pin" data-anim="pin">
+            <div class="modais__track" data-anim="horizontal">
+
+              <article class="modal-strip modal-strip--mar" data-theme="blue" aria-labelledby="modal-mar">
+                <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9">
+                  <img src="assets/img/modal-mar.webp" width="1200" height="2000" alt="" loading="lazy" decoding="async">
+                </div>
+                <div class="modal-strip__vehicle modal-strip__vehicle--ship" data-anim="parallax" data-speed="1.08">
+                  <span class="vehicle__wake" aria-hidden="true"></span>
+                  <img src="assets/img/veiculo-navio.png" data-fallback="assets/img/fallback/navio.svg" width="260" height="1100" alt="" loading="lazy" decoding="async">
+                </div>
+                <p class="modal-strip__tab" aria-hidden="true">01 · Mar</p>
+                <p class="modal-strip__tel micro" aria-hidden="true"><span>Velocidade <b data-tel="speed" data-max="18">00</b> nós</span><span>Percorrido <b data-tel="dist" data-max="412">000</b> mn</span></p>
+                <div class="modal-strip__top micro">
+                  <span>01</span><span>MOD-MAR · FCL / LCL</span>
+                </div>
+                <div class="modal-strip__body">
+                  <h3 class="modal-strip__name display" id="modal-mar">Mar</h3>
+                  <dl class="modal-strip__data">
+                    <div><dt>Prazo médio · longo curso</dt><dd>18–35 dias</dd></div>
+                    <div><dt>Cabotagem</dt><dd>6–12 dias</dd></div>
+                  </dl>
+                  <p class="modal-strip__desc">Importação, exportação e cabotagem. Contêiner cheio ou consolidado, com desembaraço incluso.</p>
+                  <a class="pill" href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete%20%E2%80%94%20frete%20mar%C3%ADtimo." target="_blank" rel="noopener">Cotar frete marítimo <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+                </div>
+              </article>
+
+              <article class="modal-strip modal-strip--terra" data-theme="dark" aria-labelledby="modal-terra">
+                <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9">
+                  <img src="assets/img/modal-terra.webp" width="1125" height="2000" alt="" loading="lazy" decoding="async">
+                </div>
+                <div class="modal-strip__vehicle modal-strip__vehicle--truck" data-anim="parallax" data-speed="1.12">
+                  <img src="assets/img/veiculo-caminhao.png" data-fallback="assets/img/fallback/caminhao.svg" width="130" height="780" alt="" loading="lazy" decoding="async">
+                </div>
+                <p class="modal-strip__tab" aria-hidden="true">02 · Terra</p>
+                <p class="modal-strip__tel micro" aria-hidden="true"><span>Velocidade <b data-tel="speed" data-max="80">00</b> km/h</span><span>Percorrido <b data-tel="dist" data-max="1240">0000</b> km</span></p>
+                <div class="modal-strip__top micro">
+                  <span>02</span><span>MOD-RDV · Fracionado / Lotação</span>
+                </div>
+                <div class="modal-strip__body">
+                  <h3 class="modal-strip__name display" id="modal-terra">Terra</h3>
+                  <dl class="modal-strip__data">
+                    <div><dt>Prazo médio</dt><dd>1–7 dias úteis</dd></div>
+                    <div><dt>Cobertura</dt><dd>27 UF</dd></div>
+                  </dl>
+                  <p class="modal-strip__desc">Truck, carreta e bitrem. Coleta na sua doca, entrega na porta do cliente.</p>
+                  <a class="pill" href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete%20%E2%80%94%20transporte%20rodovi%C3%A1rio." target="_blank" rel="noopener">Cotar rodoviário <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+                </div>
+              </article>
+
+              <article class="modal-strip modal-strip--ar" data-theme="light" aria-labelledby="modal-ar">
+                <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9">
+                  <img src="assets/img/modal-ar.webp" width="1200" height="2000" alt="" loading="lazy" decoding="async">
+                </div>
+                <span class="modal-strip__clouds" aria-hidden="true"></span>
+                <div class="modal-strip__vehicle modal-strip__vehicle--plane" data-anim="parallax" data-speed="1.2">
+                  <img src="assets/img/veiculo-aviao.png" data-fallback="assets/img/fallback/aviao.svg" width="800" height="800" alt="" loading="lazy" decoding="async">
+                </div>
+                <p class="modal-strip__tab" aria-hidden="true">03 · Ar</p>
+                <p class="modal-strip__tel micro" aria-hidden="true"><span>Velocidade <b data-tel="speed" data-max="850">000</b> km/h</span><span>Altitude <b data-tel="dist" data-max="10000">00000</b> m</span></p>
+                <div class="modal-strip__top micro">
+                  <span>03</span><span>MOD-AER · GRU / VCP</span>
+                </div>
+                <div class="modal-strip__body">
+                  <h3 class="modal-strip__name display" id="modal-ar">Ar</h3>
+                  <dl class="modal-strip__data">
+                    <div><dt>Prazo médio</dt><dd>24–72 h</dd></div>
+                    <div><dt>Perfil</dt><dd>Urgente · Alto valor</dd></div>
+                  </dl>
+                  <p class="modal-strip__desc">Quando o prazo é de horas. Aeroporto a aeroporto ou porta a porta.</p>
+                  <a class="pill" href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete%20%E2%80%94%20frete%20a%C3%A9reo." target="_blank" rel="noopener">Cotar frete aéreo <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+                </div>
+              </article>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- ═════════ 03 SERVIÇOS ═════════ -->
+        <section class="section services" id="servicos" data-theme="light" aria-labelledby="servicos-title">
+          <div class="wrap">
+            <div class="section-head">
+              <span class="section-head__num">03</span>
+              <span class="section-head__rule" aria-hidden="true"></span>
+              <span class="section-head__label">Serviços</span>
+              <span class="section-head__meta">06 soluções · 01 contrato</span>
+            </div>
+
+            <!-- Palavra gigante cortada por uma foto -->
+            <div class="cut-title">
+              <h2 class="cut-title__word display" id="servicos-title" data-anim="split-text">
+                <span class="line"><span class="line__inner">Serviços</span></span>
+              </h2>
+              <figure class="cut-title__media media media--photo" data-anim="reveal-img" data-label="servicos-navio.webp · 2000×1200">
+                <img src="assets/img/servicos-navio.webp" width="2000" height="1200" loading="lazy" decoding="async" alt="Navio porta-contêineres navegando em alto-mar" data-anim="parallax" data-speed="0.9">
+              </figure>
+              <p class="cut-title__word cut-title__word--ghost display" aria-hidden="true">
+                <span class="line"><span class="line__inner">Serviços</span></span>
+              </p>
+            </div>
+
+            <div class="services__intro">
+              <p class="lead" data-anim="fade-up">Seis serviços. Um contrato. Uma torre de controle olhando tudo, 24 horas.</p>
+              <p class="micro services__hint">Cada contêiner traz a sua ficha técnica <svg class="icon" aria-hidden="true"><use href="#i-arrow-down"/></svg></p>
+            </div>
+          </div>
+
+          <!-- Contêineres empilhados (com animação: carrossel fixo, um contêiner por vez) -->
+          <div class="yard-pin" data-anim="pin">
+            <div class="yard-hud wrap micro" aria-hidden="true">
+              <span>Pátio de serviços</span>
+              <span class="yard-hud__rail"><span class="yard-hud__trolley"></span></span>
+              <span><b class="yard-hud__idx">01</b> / 06</span>
+            </div>
+            <ol class="yard wrap" data-anim="horizontal">
+              <li class="cargo cargo--ink">
+                <div class="cargo__top">
+                  <span class="cargo__num">01</span>
+                  <dl class="cargo__spec">
+                    <div><dt>HEX</dt><dd>#0C0C0C</dd></div>
+                    <div><dt>RGB</dt><dd>012 012 012</dd></div>
+                    <div><dt>CMYK</dt><dd>00 00 00 95</dd></div>
+                  </dl>
+                </div>
+                <h3 class="cargo__name">Transporte rodoviário</h3>
+                <p class="cargo__desc">Fracionado e lotação. Truck, carreta e bitrem, com coleta em 24 h.</p>
+                <div class="cargo__foot">
+                  <p class="cargo__meta">SVC-RDV · até 57 t · 27 UF</p>
+                  <a class="pill" href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete%20%E2%80%94%20transporte%20rodovi%C3%A1rio." target="_blank" rel="noopener" aria-label="Cotar transporte rodoviário pelo WhatsApp">Cotar <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+                </div>
+              </li>
+
+              <li class="cargo cargo--white">
+                <div class="cargo__top">
+                  <span class="cargo__num">02</span>
+                  <dl class="cargo__spec">
+                    <div><dt>HEX</dt><dd>#F7F7F7</dd></div>
+                    <div><dt>RGB</dt><dd>247 247 247</dd></div>
+                    <div><dt>CMYK</dt><dd>00 00 00 03</dd></div>
+                  </dl>
+                </div>
+                <h3 class="cargo__name">Frete marítimo</h3>
+                <p class="cargo__desc">FCL, LCL e cabotagem. Booking, desembaraço e retirada no porto.</p>
+                <div class="cargo__foot">
+                  <p class="cargo__meta">SVC-MAR · 20′ 40′ HC · Santos</p>
+                  <a class="pill" href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete%20%E2%80%94%20frete%20mar%C3%ADtimo." target="_blank" rel="noopener" aria-label="Cotar frete marítimo pelo WhatsApp">Cotar <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+                </div>
+              </li>
+
+              <li class="cargo cargo--blue">
+                <div class="cargo__top">
+                  <span class="cargo__num">03</span>
+                  <dl class="cargo__spec">
+                    <div><dt>HEX</dt><dd>#1C58D7</dd></div>
+                    <div><dt>RGB</dt><dd>028 088 215</dd></div>
+                    <div><dt>CMYK</dt><dd>87 59 00 16</dd></div>
+                  </dl>
+                </div>
+                <h3 class="cargo__name">Frete aéreo</h3>
+                <p class="cargo__desc">Urgente, perecível ou de alto valor. Embarque no mesmo dia.</p>
+                <div class="cargo__foot">
+                  <p class="cargo__meta">SVC-AER · 24–72 h · GRU / VCP</p>
+                  <a class="pill" href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete%20%E2%80%94%20frete%20a%C3%A9reo." target="_blank" rel="noopener" aria-label="Cotar frete aéreo pelo WhatsApp">Cotar <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+                </div>
+              </li>
+
+              <li class="cargo cargo--signal">
+                <div class="cargo__top">
+                  <span class="cargo__num">04</span>
+                  <dl class="cargo__spec">
+                    <div><dt>HEX</dt><dd>#FF4D1A</dd></div>
+                    <div><dt>RGB</dt><dd>255 077 026</dd></div>
+                    <div><dt>CMYK</dt><dd>00 70 90 00</dd></div>
+                  </dl>
+                </div>
+                <h3 class="cargo__name">Armazenagem</h3>
+                <p class="cargo__desc">48.000 m² com WMS, cross-docking e inventário em tempo real.</p>
+                <div class="cargo__foot">
+                  <p class="cargo__meta">SVC-ARM · 36 docas · WMS</p>
+                  <a class="pill" href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete%20%E2%80%94%20armazenagem." target="_blank" rel="noopener" aria-label="Cotar armazenagem pelo WhatsApp">Cotar <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+                </div>
+              </li>
+
+              <li class="cargo cargo--steel">
+                <div class="cargo__top">
+                  <span class="cargo__num">05</span>
+                  <dl class="cargo__spec">
+                    <div><dt>HEX</dt><dd>#8A8F94</dd></div>
+                    <div><dt>RGB</dt><dd>138 143 148</dd></div>
+                    <div><dt>CMYK</dt><dd>07 03 00 42</dd></div>
+                  </dl>
+                </div>
+                <h3 class="cargo__name">Distribuição</h3>
+                <p class="cargo__desc">Last mile B2B e B2C. Janela D+1 nas capitais do Sul e Sudeste.</p>
+                <div class="cargo__foot">
+                  <p class="cargo__meta">SVC-DST · D+1 · 120 rotas/dia</p>
+                  <a class="pill" href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete%20%E2%80%94%20distribui%C3%A7%C3%A3o." target="_blank" rel="noopener" aria-label="Cotar distribuição pelo WhatsApp">Cotar <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+                </div>
+              </li>
+
+              <li class="cargo cargo--ink">
+                <div class="cargo__top">
+                  <span class="cargo__num">06</span>
+                  <dl class="cargo__spec">
+                    <div><dt>HEX</dt><dd>#0C0C0C</dd></div>
+                    <div><dt>RGB</dt><dd>012 012 012</dd></div>
+                    <div><dt>CMYK</dt><dd>00 00 00 95</dd></div>
+                  </dl>
+                </div>
+                <h3 class="cargo__name">Rastreamento</h3>
+                <p class="cargo__desc">Torre de controle 24/7, alertas por WhatsApp e API para o seu ERP.</p>
+                <div class="cargo__foot">
+                  <p class="cargo__meta">SVC-TRK · atualização 30 s · API</p>
+                  <a class="pill" href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete%20%E2%80%94%20rastreamento%20dedicado." target="_blank" rel="noopener" aria-label="Falar sobre rastreamento pelo WhatsApp">Cotar <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <!-- ═════════ 04 NÚMEROS ═════════ -->
+        <section class="section numbers" id="numeros" data-theme="dark" aria-labelledby="numeros-title">
+          <div class="wrap">
+            <div class="section-head">
+              <span class="section-head__num">04</span>
+              <span class="section-head__rule" aria-hidden="true"></span>
+              <span class="section-head__label">Números</span>
+              <span class="section-head__meta">Base: operação 2025</span>
+            </div>
+
+            <h2 class="numbers__title display fit" id="numeros-title" data-anim="split-text">
+              <span class="line"><span class="line__inner">Peso pesado.</span></span>
+              <span class="line line--end"><span class="line__inner u-signal">Prazo leve.</span></span>
+            </h2>
+          </div>
+
+          <ul class="stats wrap" data-anim="stagger">
+            <li class="stat">
+              <p class="stat__value"><span class="stat__affix">+</span><span data-anim="counter" data-count="12000" data-decimals="0">12.000</span></p>
+              <p class="stat__label">Entregas por mês</p>
+              <p class="stat__code micro">KPI-01 · Média mensal</p>
+            </li>
+            <li class="stat">
+              <p class="stat__value"><span data-anim="counter" data-count="27" data-decimals="0">27</span></p>
+              <p class="stat__label">Estados atendidos</p>
+              <p class="stat__code micro">KPI-02 · Cobertura nacional</p>
+            </li>
+            <li class="stat stat--signal">
+              <p class="stat__value"><span data-anim="counter" data-count="98.7" data-decimals="1">98,7</span><span class="stat__affix">%</span></p>
+              <p class="stat__label">Entregas no prazo</p>
+              <p class="stat__code micro">KPI-03 · OTIF 12 meses</p>
+            </li>
+            <li class="stat">
+              <p class="stat__value"><span data-anim="counter" data-count="15" data-decimals="0">15</span><span class="stat__affix">anos</span></p>
+              <p class="stat__label">De estrada</p>
+              <p class="stat__code micro">KPI-04 · Desde 2011</p>
+            </li>
+            <li class="stat">
+              <p class="stat__value"><span data-anim="counter" data-count="48000" data-decimals="0">48.000</span><span class="stat__affix">m²</span></p>
+              <p class="stat__label">De armazém próprio</p>
+              <p class="stat__code micro">KPI-05 · Santos + Jundiaí</p>
+            </li>
+            <li class="stat">
+              <p class="stat__value"><span data-anim="counter">24/7</span></p>
+              <p class="stat__label">Torre de controle</p>
+              <p class="stat__code micro">KPI-06 · Sem plantão, sem pausa</p>
+            </li>
+          </ul>
+        </section>
+
+        <!-- ═════════ 05 COMO FUNCIONA ═════════ -->
+        <section class="section process" id="como-funciona" data-theme="light" aria-labelledby="processo-title">
+          <div class="wrap">
+            <div class="section-head">
+              <span class="section-head__num">05</span>
+              <span class="section-head__rule" aria-hidden="true"></span>
+              <span class="section-head__label">Como funciona</span>
+              <span class="section-head__meta">04 etapas · 01 rota</span>
+            </div>
+
+            <h2 class="process__title display fit" id="processo-title" data-anim="split-text">
+              <span class="line"><span class="line__inner">Do porto à</span></span>
+              <span class="line line--end"><span class="line__inner">sua porta.</span></span>
+            </h2>
+          </div>
+
+          <div class="route wrap">
+            <p class="route__meta micro">
+              <span>Rota exemplo</span><span>Santos/SP → Manaus/AM</span><span>3.989 km</span><span>ETA 6 dias</span>
+            </p>
+            <ol class="route__steps" data-anim="stagger">
+              <li class="route__cargo" aria-hidden="true"></li>
+              <li class="step">
+                <span class="step__node" aria-hidden="true"></span>
+                <p class="step__km micro">KM 0000</p>
+                <span class="step__num">01</span>
+                <h3 class="step__name">Cotação</h3>
+                <p class="step__time micro">Em até 30 min</p>
+                <p class="step__desc">Mande origem, destino, peso e volume pelo WhatsApp. O preço e o prazo voltam fechados.</p>
+              </li>
+              <li class="step">
+                <span class="step__node" aria-hidden="true"></span>
+                <p class="step__km micro">KM 0012</p>
+                <span class="step__num">02</span>
+                <h3 class="step__name">Coleta</h3>
+                <p class="step__time micro">D+0 ou D+1</p>
+                <p class="step__desc">Coleta agendada na sua doca, com checklist e foto da carga lacrada.</p>
+              </li>
+              <li class="step">
+                <span class="step__node" aria-hidden="true"></span>
+                <p class="step__km micro">KM 2140</p>
+                <span class="step__num">03</span>
+                <h3 class="step__name">Transporte</h3>
+                <p class="step__time micro">Tempo real</p>
+                <p class="step__desc">Rota monitorada 24/7 pela torre de controle. Você acompanha pelo código de rastreio.</p>
+              </li>
+              <li class="step step--end">
+                <span class="step__node" aria-hidden="true"></span>
+                <p class="step__km micro">KM 3989</p>
+                <span class="step__num">04</span>
+                <h3 class="step__name">Entrega</h3>
+                <p class="step__time micro">Comprovante digital</p>
+                <p class="step__desc">Canhoto digital com foto, assinatura e geolocalização em até 1 hora.</p>
+              </li>
+            </ol>
+            <a class="pill pill--signal process__cta" href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete." target="_blank" rel="noopener" data-anim="magnetic">Começar pela cotação <svg class="icon" aria-hidden="true"><use href="#i-arrow-ne"/></svg></a>
+          </div>
+        </section>
+
+        <!-- ═════════ 06 CLIENTES ═════════ -->
+        <section class="section clients" id="clientes" data-theme="dark" aria-labelledby="clientes-title">
+          <div class="wrap">
+            <div class="section-head">
+              <span class="section-head__num">06</span>
+              <span class="section-head__rule" aria-hidden="true"></span>
+              <span class="section-head__label">Clientes</span>
+              <span class="section-head__meta">+1.200 empresas atendidas</span>
+            </div>
+
+            <h2 class="clients__title display fit" id="clientes-title" data-anim="split-text">
+              <span class="line"><span class="line__inner">Quem carrega</span></span>
+              <span class="line line--end"><span class="line__inner">com a gente.</span></span>
+            </h2>
+          </div>
+
+          <!-- Faixa de logos/segmentos: troque cada <li> por um <img> SVG do logo do cliente -->
+          <div class="marquee" data-anim="marquee">
+            <ul class="marquee__track" aria-label="Segmentos atendidos">
+              <li>Indústria</li>
+              <li>E-commerce</li>
+              <li>Distribuidores</li>
+              <li>Importadores</li>
+              <li>Agronegócio</li>
+              <li>Varejo</li>
+              <li>Farma</li>
+              <li>Autopeças</li>
+            </ul>
+            <ul class="marquee__track" aria-hidden="true">
+              <li>Indústria</li>
+              <li>E-commerce</li>
+              <li>Distribuidores</li>
+              <li>Importadores</li>
+              <li>Agronegócio</li>
+              <li>Varejo</li>
+              <li>Farma</li>
+              <li>Autopeças</li>
+            </ul>
+          </div>
+
+          <!-- SUBSTITUIR pelos depoimentos reais (com autorização do cliente) -->
+          <div class="quotes wrap" data-anim="stagger">
+            <figure class="quote quote--paper">
+              <p class="quote__id micro">D-01 · Autopeças</p>
+              <blockquote class="quote__text">
+                <p>“Trocamos três transportadoras por uma. Prazo deixou de ser pauta de reunião.”</p>
+              </blockquote>
+              <figcaption class="quote__who">
+                <strong>R. Mendes</strong>
+                <span>Gerente de Supply Chain · Indústria de autopeças · Campinas/SP</span>
+              </figcaption>
+              <p class="quote__route micro">Rota Campinas → Recife · 14 carretas/semana</p>
+            </figure>
+
+            <figure class="quote quote--ink">
+              <p class="quote__id micro">D-02 · E-commerce</p>
+              <blockquote class="quote__text">
+                <p>“Black Friday com 4 mil pedidos por dia e nenhum atraso. A torre avisa antes da gente perguntar.”</p>
+              </blockquote>
+              <figcaption class="quote__who">
+                <strong>C. Araújo</strong>
+                <span>Head de Operações · E-commerce de moda · São Paulo/SP</span>
+              </figcaption>
+              <p class="quote__route micro">Last mile SP capital · D+1</p>
+            </figure>
+
+            <figure class="quote quote--blue">
+              <p class="quote__id micro">D-03 · Importação</p>
+              <blockquote class="quote__text">
+                <p>“O contêiner desce em Santos e em 48 horas está no nosso CD em Goiânia. Sem surpresa na fatura.”</p>
+              </blockquote>
+              <figcaption class="quote__who">
+                <strong>L. Ferreira</strong>
+                <span>Diretor de Importação · Distribuidora de eletrônicos · Goiânia/GO</span>
+              </figcaption>
+              <p class="quote__route micro">Santos → Goiânia · FCL 40′ HC</p>
+            </figure>
+          </div>
+        </section>
+
+        <!-- ═════════ 07 RASTREAMENTO ═════════ -->
+        <section class="section tracking" id="rastreamento" data-theme="blue" aria-labelledby="rastreio-title">
+          <div class="wrap">
+            <div class="section-head">
+              <span class="section-head__num">07</span>
+              <span class="section-head__rule" aria-hidden="true"></span>
+              <span class="section-head__label">Rastreamento</span>
+              <span class="section-head__meta">Torre de controle 24/7</span>
+            </div>
+
+            <h2 class="tracking__title display fit" id="rastreio-title" data-anim="split-text">
+              <span class="line"><span class="line__inner">Onde está</span></span>
+              <span class="line line--end"><span class="line__inner">sua carga?</span></span>
+            </h2>
+          </div>
+
+          <div class="tracking__body wrap">
+            <!-- Formulário visual: envia o código para o portal real de rastreamento -->
+            <form class="track-form" action="https://rastreio.vetorlogistica.com.br/" method="get" target="_blank" novalidate>
+              <label class="micro" for="track-code">Código de rastreio</label>
+              <div class="track-form__row">
+                <input class="track-form__input" id="track-code" name="codigo" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="VTR-0000-0000-BR" aria-describedby="track-help track-error">
+                <button class="btn-circle track-form__submit" type="submit" aria-label="Rastrear carga" data-anim="magnetic">
+                  <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg>
+                </button>
+              </div>
+              <p class="track-form__help micro" id="track-help">O portal de rastreamento abre em uma nova aba.</p>
+              <p class="track-form__error" id="track-error" aria-live="polite"></p>
+              <a class="pill tracking__portal" href="https://rastreio.vetorlogistica.com.br/" target="_blank" rel="noopener">Acessar o portal completo <svg class="icon" aria-hidden="true"><use href="#i-arrow-ne"/></svg></a>
+            </form>
+
+            <aside class="ticket" aria-label="Exemplo de status de rastreio">
+              <p class="ticket__head micro"><span>Exemplo de status</span><span>Atualizado há 30 s</span></p>
+              <dl class="ticket__data">
+                <div><dt>Código</dt><dd>VTR-2026-0417-BR</dd></div>
+                <div><dt>Status</dt><dd class="ticket__status">Em trânsito</dd></div>
+                <div><dt>Origem</dt><dd>Santos/SP</dd></div>
+                <div><dt>Destino</dt><dd>Goiânia/GO</dd></div>
+                <div><dt>Posição</dt><dd>BR-050 · KM 212</dd></div>
+                <div><dt>ETA</dt><dd>02 OUT · 14:00</dd></div>
+              </dl>
+              <ol class="ticket__progress" aria-label="Etapa 3 de 4">
+                <li class="is-done">Coleta</li>
+                <li class="is-done">Terminal</li>
+                <li class="is-current">Rota</li>
+                <li>Entrega</li>
+              </ol>
+            </aside>
+          </div>
+        </section>
+
+        <!-- ═════════ 08 CONTATO ═════════ -->
+        <section class="section contact" id="contato" data-theme="signal" aria-labelledby="contato-title">
+          <div class="wrap">
+            <div class="section-head">
+              <span class="section-head__num">08</span>
+              <span class="section-head__rule" aria-hidden="true"></span>
+              <span class="section-head__label">Contato</span>
+              <span class="section-head__meta">Resposta em até 30 min</span>
+            </div>
+
+            <div class="contact__stage">
+              <h2 class="contact__title display fit" id="contato-title" data-anim="split-text">
+                <span class="line"><span class="line__inner">Vamos</span></span>
+                <span class="line"><span class="line__inner">carregar?</span></span>
+              </h2>
+
+              <div class="contact__cta">
+                <a class="contact__wa" href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete." target="_blank" rel="noopener" data-anim="magnetic">
+                  <span class="contact__wa-label">Chamar no WhatsApp</span>
+                  <span class="contact__wa-circle" aria-hidden="true"><svg class="icon"><use href="#i-arrow-ne"/></svg></span>
+                </a>
+                <p class="contact__note">Mande origem, destino, peso e volume. A cotação volta fechada, com preço e prazo.</p>
+              </div>
+            </div>
+
+            <dl class="contact__data" data-anim="stagger">
+              <div>
+                <dt>WhatsApp</dt>
+                <dd><a href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete." target="_blank" rel="noopener">(13) 90000-0000</a></dd>
+              </div>
+              <div>
+                <dt>E-mail</dt>
+                <dd><a href="mailto:comercial@vetorlogistica.com.br">comercial@vetorlogistica.com.br</a></dd>
+              </div>
+              <div>
+                <dt>Instagram</dt>
+                <dd><a href="https://www.instagram.com/vetorlogistica" target="_blank" rel="noopener">@vetorlogistica</a></dd>
+              </div>
+              <div>
+                <dt>Endereço</dt>
+                <dd><a href="https://www.google.com/maps/search/?api=1&amp;query=Av.%20Portu%C3%A1ria%201500%20Santos%20SP" target="_blank" rel="noopener">Av. Portuária, 1500<br>Santos/SP · 11015-000</a></dd>
+              </div>
+              <div>
+                <dt>Horário</dt>
+                <dd>Seg–Sex 07h–19h<br>Sáb 08h–12h · Torre 24/7</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- ═════════ RODAPÉ ═════════ -->
+      <footer class="site-footer" data-theme="dark">
+        <div class="site-footer__top wrap">
+          <p class="site-footer__claim display">Peso pesado.<br>Prazo leve.</p>
+
+          <nav class="site-footer__nav" aria-label="Rodapé">
+            <ul>
+              <li><a href="#sobre">Sobre</a></li>
+              <li><a href="#modais">Modais</a></li>
+              <li><a href="#servicos">Serviços</a></li>
+              <li><a href="#numeros">Números</a></li>
+              <li><a href="#como-funciona">Processo</a></li>
+              <li><a href="#clientes">Clientes</a></li>
+              <li><a href="#rastreamento">Rastreio</a></li>
+              <li><a href="#contato">Contato</a></li>
+            </ul>
+          </nav>
+
+          <address class="site-footer__contact">
+            <a href="https://wa.me/5513900000000?text=Ol%C3%A1!%20Quero%20cotar%20um%20frete." target="_blank" rel="noopener">WhatsApp (13) 90000-0000</a>
+            <a href="mailto:comercial@vetorlogistica.com.br">comercial@vetorlogistica.com.br</a>
+            <a href="https://www.instagram.com/vetorlogistica" target="_blank" rel="noopener">Instagram @vetorlogistica</a>
+            <span>Av. Portuária, 1500 · Santos/SP</span>
+          </address>
+
+          <a class="btn-circle btn-circle--ghost site-footer__top-link" href="#inicio" data-anim="magnetic">
+            <span class="btn-circle__label">Topo</span>
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow-up"/></svg>
+          </a>
+        </div>
+
+        <div class="site-footer__legal wrap micro">
+          <span>© <span data-year>2026</span> VETOR Logística Ltda.</span>
+          <span>CNPJ 00.000.000/0001-00</span>
+          <span>23°57′S · 46°20′W</span>
+        </div>
+
+        <p class="site-footer__brand" aria-hidden="true">Vetor</p>
+      </footer>
+    </div>
+  </div>
+</body>
+</html>

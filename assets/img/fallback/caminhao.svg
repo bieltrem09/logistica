@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 780" width="130" height="780">
+  <title>Caminhão com contêiner visto de cima</title>
+  <defs>
+    <pattern id="roof" width="118" height="14" patternUnits="userSpaceOnUse">
+      <rect width="118" height="14" fill="#1C58D7"/>
+      <rect y="10" width="118" height="4" fill="#1548B4"/>
+    </pattern>
+  </defs>
+  <rect x="6" y="4" width="118" height="600" fill="url(#roof)" stroke="#0C0C0C" stroke-width="4"/>
+  <rect x="6" y="4" width="14" height="12" fill="#0C0C0C"/>
+  <rect x="110" y="4" width="14" height="12" fill="#0C0C0C"/>
+  <rect x="6" y="592" width="14" height="12" fill="#0C0C0C"/>
+  <rect x="110" y="592" width="14" height="12" fill="#0C0C0C"/>
+  <rect x="50" y="604" width="30" height="24" fill="#0C0C0C"/>
+  <rect x="0" y="708" width="16" height="7" fill="#0C0C0C"/>
+  <rect x="114" y="708" width="16" height="7" fill="#0C0C0C"/>
+  <path d="M14 628h102v118c0 16-12 30-28 30H42c-16 0-28-14-28-30Z" fill="#F7F7F7" stroke="#0C0C0C" stroke-width="4"/>
+  <rect x="24" y="638" width="82" height="44" fill="#DDD8CF"/>
+  <rect x="14" y="696" width="102" height="8" fill="#FF4D1A"/>
+  <path d="M26 748h78" stroke="#0C0C0C" stroke-width="12"/>
+</svg>

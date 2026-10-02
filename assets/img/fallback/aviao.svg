@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <title>Avião cargueiro visto de cima</title>
+  <g fill="#F7F7F7" stroke="#0C0C0C" stroke-width="5" stroke-linejoin="miter">
+    <path d="M366 330 60 500v42l306-100Z"/>
+    <path d="M434 330 740 500v42L434 442Z"/>
+    <path d="M384 640 268 722v26l116-44Z"/>
+    <path d="M416 640 532 722v26l-116-44Z"/>
+    <rect x="256" y="356" width="24" height="62"/>
+    <rect x="156" y="412" width="24" height="62"/>
+    <rect x="520" y="356" width="24" height="62"/>
+    <rect x="620" y="412" width="24" height="62"/>
+    <path d="M400 26c24 0 36 34 36 76v556c0 44-18 92-36 116-18-24-36-72-36-116V102c0-42 12-76 36-76Z"/>
+  </g>
+  <path d="M382 84h36" stroke="#0C0C0C" stroke-width="10"/>
+  <rect x="396" y="648" width="8" height="118" fill="#0C0C0C"/>
+  <rect x="60" y="500" width="18" height="36" fill="#FF4D1A"/>
+  <rect x="722" y="500" width="18" height="36" fill="#FF4D1A"/>
+  <rect x="388" y="560" width="24" height="24" fill="#FF4D1A"/>
+</svg>
