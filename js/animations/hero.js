@@ -2,7 +2,9 @@
  * HERO — o contêiner suspenso desce com a rolagem.
  *
  * Estrutura → suporte → carga:
- *   carro do guindaste (fora da tela) → cabo principal → gancho → lingas → contêiner
+ *   lança do guindaste → cabo principal → gancho → lingas → contêiner
+ * A lança é basculante: na carga da página a ponta fica acima da tela; rolando, é ela que
+ * desce levando a carga, e aparece por baixo do cabeçalho. Vindo para a câmera, ela sobe.
  * A física (js/cable-physics.js) dá peso: o carro anda primeiro, o cabo balança,
  * o contêiner atrasa em relação ao gancho e o cabo quica quando a descida freia.
  *
@@ -89,9 +91,9 @@ function createHero2D(heroEl, cargo, { photo = false } = {}) {
 
       const hx = G.restX + tx;
       const hy = G.hookY0 + ty;
-      const len = Math.hypot(hx - pose.tx, hy - G.pivotY);
-      const ang = Math.atan2(hy - G.pivotY, hx - pose.tx) - Math.PI / 2;
-      rope.style.transform = `translate3d(${pose.tx}px, ${G.pivotY}px, 0) rotate(${ang}rad) scaleY(${len})`;
+      const len = Math.hypot(hx - pose.tx, hy - pose.py);
+      const ang = Math.atan2(hy - pose.py, hx - pose.tx) - Math.PI / 2;
+      rope.style.transform = `translate3d(${pose.tx}px, ${pose.py}px, 0) rotate(${ang}rad) scaleY(${len})`;
 
       const r = (drop + G.h / 2) * sc;
       base.x = hx - r * Math.sin(rot);
@@ -102,6 +104,28 @@ function createHero2D(heroEl, cargo, { photo = false } = {}) {
     },
     basePoint() {
       return base;
+    },
+  };
+}
+
+/**
+ * Guindaste: a lança basculante. A polia da ponta (âncora definida no CSS) fica sempre no
+ * ponto de suspensão do cabo; a lança anda com o carro (mouse, rolagem rápida), desce com a
+ * carga e cede quando o cabo estica. Funciona com a foto recortada ou com o vetor de reserva.
+ */
+function createCrane(heroEl) {
+  const crane = q('.hero__crane', heroEl);
+  if (!crane) return null;
+  let ax = 0;
+  let ay = 0;
+  return {
+    layout() {
+      const cs = getComputedStyle(crane);
+      ax = crane.offsetWidth * (parseFloat(cs.getPropertyValue('--crane-ax')) || 0.975);
+      ay = crane.offsetHeight * (parseFloat(cs.getPropertyValue('--crane-ay')) || 0.85);
+    },
+    render(pose) {
+      crane.style.transform = `translate3d(${pose.tx - ax}px, ${pose.py - ay}px, 0)`;
     },
   };
 }
@@ -192,6 +216,8 @@ export async function setupHero(textures) {
 
   const hud = createHud(heroEl);
   hud?.layout(driver.geom);
+  const crane = createCrane(heroEl);
+  crane?.layout();
 
   let running = false;
   let tagH = tag ? tag.offsetHeight : 0;
@@ -200,6 +226,7 @@ export async function setupHero(textures) {
     const pose = driver.update(dt);
     if (driver.state.progress > HERO_PHASES.approachEnd + 0.02) return;
     view.render(pose, driver.geom);
+    crane?.render(pose);
     hud?.render(view.basePoint(), pose);
     if (is3d && tag) {
       const pt = view.tagPoint();
@@ -236,6 +263,7 @@ export async function setupHero(textures) {
       driver.measure(heroEl, cargo);
       view.layout(driver.geom);
       hud?.layout(driver.geom);
+      crane?.layout();
       tagH = tag ? tag.offsetHeight : 0;
     },
     drop() {
@@ -381,7 +409,7 @@ export function initHeroAnimation({ hero, setHeaderTheme }) {
     .to('.hero__sky', { filter: 'brightness(0.32)', duration: doors - lowerEnd }, lowerEnd)
     // As portas (DOM) assumem exatamente onde a face 3D cobre a tela
     .set('.hero__doors', { visibility: 'visible' }, doors)
-    .set(['.hero__sky', '.hero__shade', '.hero__title', '.hero__gl', '.hero__cargo', '.hero__rope', '.hero__ui', '.hero__hud'], { autoAlpha: 0 }, doors)
+    .set(['.hero__sky', '.hero__shade', '.hero__title', '.hero__gl', '.hero__cargo', '.hero__rope', '.hero__ui', '.hero__hud', '.hero__crane'], { autoAlpha: 0 }, doors)
     .fromTo('.door--left', { rotationY: 0, '--shade': 0 }, { rotationY: -100, '--shade': 0.6, duration: 0.3, ease: 'power2.in' }, doors + 0.012)
     .fromTo('.door--right', { rotationY: 0, '--shade': 0 }, { rotationY: 100, '--shade': 0.6, duration: 0.3, ease: 'power2.in' }, doors + 0.012)
     .to('.hero__doors', { autoAlpha: 0, duration: 0.05 }, doors + 0.3)

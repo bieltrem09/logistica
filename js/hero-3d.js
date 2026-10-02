@@ -149,7 +149,7 @@ export function createHero3D({ canvas, textures }) {
     rig.position.lerpVectors(physPos, target.pos, a);
     rig.quaternion.slerpQuaternions(qPhys, target.quat, a);
 
-    toWorld(pivot, pose.tx, G.pivotY, pose.tz);
+    toWorld(pivot, pose.tx, pose.py, pose.tz); // ponta da lança do guindaste
     placeCylinder(mainCable, pivot, rig.position, 0.0042 * G.w * k);
 
     // Movimento secundário: o gancho segue o cabo; lingas e contêiner atrasam (alpha) em relação a ele

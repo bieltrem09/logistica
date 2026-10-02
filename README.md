@@ -51,6 +51,7 @@ A sequência completa está descrita em `DIRECAO-DE-ARTE.md` (seção 4). Onde a
 |---|---|
 | Fases do hero (espera, descida, aproximação, portas) | `HERO_PHASES` em `js/hero-rig.js` e altura do `.hero-spacer` (1,5 × hero) em `js/animations/hero.js` |
 | Antecipação (cabo tensiona, carro anda antes da carga) | `preload` / `lead` em `js/hero-rig.js` |
+| Quanto a lança desce, cede e sobe | `boomDrop`, `sag` e `lift` em `js/hero-rig.js`; tamanho em `--crane-h` (`css/style.css`) |
 | Peso do balanço (gravidade, amortecimento, quique do cabo) | constantes em `js/cable-physics.js` |
 | Quanto a rolagem rápida sacode o contêiner | `targetX` / `targetZ` em `js/hero-rig.js` |
 | Rotas do navio, caminhão e avião | `ROUTES` em `js/animations/journey.js` (em px da faixa aberta) |
@@ -59,9 +60,19 @@ A sequência completa está descrita em `DIRECAO-DE-ARTE.md` (seção 4). Onde a
 | Peso do contêiner azul (mola) | `createSpring({ stiffness, damping })` em `js/animations/services.js` |
 | Pêndulo do pátio e encaixe | `pendulum` e `snap` em `js/animations/yard.js` |
 
-**Contêiner do hero:** se existir `assets/img/hero-container.png` (recorte com fundo transparente, 1000 × 780,
-lingas no topo, como o vetor), o hero usa a foto real com a mesma física e as portas recebem a foto.
-Sem o arquivo, roda o contêiner 3D; sem WebGL, o vetor 2D.
+**Fotos do hero (opcionais, entram sozinhas quando o arquivo existe):**
+
+| Arquivo | O que deve ser | Sem o arquivo |
+|---|---|---|
+| `assets/img/hero-container.png` | Recorte com fundo transparente, proporção 1000 × 780, gancho no centro do topo (como o vetor). O hero usa a foto com a mesma física e as portas recebem a foto. | Contêiner 3D (ou vetor 2D sem WebGL) |
+| `assets/img/hero-guindaste.png` | Recorte com fundo transparente **só da lança** (sem os ganchos da foto), na horizontal, com a polia da ponta encostada na borda direita. Ajuste fino da posição da polia em `--crane-ax` / `--crane-ay` (`css/style.css`). | Lança vetorial |
+
+Use somente arquivos licenciados, sem marca-d'água (a prévia com marca-d'água de banco de imagens não pode ser publicada).
+
+**Guindaste:** a lança é basculante. Na carga da página a ponta fica acima da tela; rolando, é ela que desce levando
+o contêiner e aparece por baixo do cabeçalho. A lança acompanha o carro (mouse e rolagem rápida), cede quando o cabo
+estica e sobe para fora de quadro quando o contêiner vem para a câmera. A física considera a lança descendo
+(gravidade efetiva e cabo elástico) em `js/cable-physics.js`.
 
 **Robustez:** a tela de entrada some sozinha em 9 s se algo falhar. Sem WebGL, o mesmo movimento roda no vetor 2D.
 Com `prefers-reduced-motion`, sem JS ou sem acesso ao CDN, o site fica no estado estático completo.

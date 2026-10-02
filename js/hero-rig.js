@@ -56,6 +56,12 @@ export function createDriver() {
     });
     // Desce até perto da base da tela, sem sair dela (no celular o contêiner já começa baixo)
     geom.lowerPx = clamp(H * 0.9 - geom.restCenterY, H * 0.12, H * 0.4);
+    // A lança do guindaste desce junto e precisa aparecer abaixo do cabeçalho no fim da descida.
+    // Se a carga desce pouco (celular), a lança desce mais e recolhe o cabo na diferença.
+    const header = document.querySelector('.site-header')?.offsetHeight || 0;
+    const crane = document.querySelector('.hero__crane-body');
+    const craneH = crane ? crane.offsetHeight : 0;
+    geom.boomDrop = Math.max(geom.lowerPx, header + 0.9 * craneH + 0.02 * H - pivotY);
     return geom;
   }
 
@@ -79,7 +85,10 @@ export function createDriver() {
     // Some quando o contêiner começa a vir para a câmera.
     const aim = state.pointer * 0.022 * geom.W * (1 - smoothstep(lowerEnd, approachEnd, p));
 
-    const Lcmd = geom.L0 + state.introOffset - preload + el * geom.lowerPx;
+    // Lança basculante: é o ponto de suspensão que desce (a carga vai junto); o cabo só
+    // recolhe se a lança precisar descer mais que a carga (celular)
+    const py = geom.pivotY + el * geom.boomDrop;
+    const Lcmd = geom.L0 + state.introOffset - preload - el * (geom.boomDrop - geom.lowerPx);
     const targetX =
       geom.restX +
       lead +
@@ -91,11 +100,19 @@ export function createDriver() {
 
     const steps = Math.max(1, Math.ceil(dt / (1 / 240)));
     const h = dt / steps;
+    const py0 = state.py ?? py;
     for (let i = 0; i < steps; i += 1) {
-      physics.step({ dt: h, Lcmd, targetX, targetZ, psiTarget, g: geom.g });
+      // a lança anda suave entre os subpassos (sem degrau de velocidade a cada quadro)
+      physics.step({ dt: h, Lcmd, targetX, targetZ, psiTarget, g: geom.g, py: py0 + ((py - py0) * (i + 1)) / steps });
     }
+    state.py = py;
 
     const { theta, phi, L } = physics;
+    const approach = easeInOutCubic(pa);
+    // Ponta da lança como se vê: cede um pouco quando o cabo estica (a carga freando puxa)
+    // e sobe para fora do quadro quando o contêiner vem para a câmera
+    const sag = clamp(physics.ext * 0.12, -6, 10);
+    const lift = approach * (py + 0.35 * geom.H);
     return {
       tx: physics.tx,
       tz: physics.tz,
@@ -105,11 +122,13 @@ export function createDriver() {
       psi: physics.psi,
       alpha: physics.alpha,
       hx: physics.tx + L * Math.sin(theta),
-      hy: geom.pivotY + L * Math.cos(theta) * Math.cos(phi),
+      py: py + sag - lift,
+      ext: physics.ext,
+      hy: py + L * Math.cos(theta) * Math.cos(phi),
       hz: L * Math.cos(theta) * Math.sin(phi),
       lower: el,
       hold,
-      approach: easeInOutCubic(pa),
+      approach,
     };
   }
 

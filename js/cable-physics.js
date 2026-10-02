@@ -8,6 +8,8 @@
  *  - ext:   elasticidade do cabo (o "quique" quando a descida para)
  * Unidades em pixels e segundos. O carro segue o alvo com uma mola crítica;
  * a aceleração dele é o que faz a carga balançar, como num guindaste real.
+ * O ponto de suspensão também pode subir e descer (lança basculante, `py`): acelerar
+ * a lança para baixo alivia a gravidade sentida pela carga e frear estica o cabo.
  */
 
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
@@ -34,6 +36,8 @@ export class CablePhysics {
     this.tzV = 0;
     this.lPrev = null;
     this.lVel = 0;
+    this.pyPrev = null;
+    this.pyVel = 0;
     this.L = 0;
   }
 
@@ -52,12 +56,21 @@ export class CablePhysics {
    * @param {number} p.targetZ   alvo em profundidade (px, positivo = para a câmera)
    * @param {number} p.psiTarget giro alvo (rad)
    * @param {number} p.g         gravidade (px/s²)
+   * @param {number} [p.py]      altura do ponto de suspensão (px, para baixo é positivo)
    */
-  step({ dt, Lcmd, targetX, targetZ, psiTarget, g }) {
+  step({ dt, Lcmd, targetX, targetZ, psiTarget, g, py = 0 }) {
     if (this.tx === null) {
       this.tx = targetX;
       this.lPrev = Lcmd;
     }
+    if (this.pyPrev === null) this.pyPrev = py;
+
+    // Lança descendo: a aceleração vertical do ponto de suspensão muda a gravidade sentida
+    const pyVel = (py - this.pyPrev) / dt;
+    const pyAcc = clamp((pyVel - this.pyVel) / dt, -30000, 30000);
+    this.pyPrev = py;
+    this.pyVel = pyVel;
+    const gEff = Math.max(0.25 * g, g - pyAcc);
 
     // Carro do guindaste (mola crítica): sua aceleração excita o balanço
     const kT = 48;
@@ -79,7 +92,7 @@ export class CablePhysics {
     // Cabo elástico: quando a descida freia, a carga quica
     const kE = 150;
     const cE = 4.6;
-    const extA = -kE * this.ext - cE * this.extV - lAcc * 0.5;
+    const extA = -kE * this.ext - cE * this.extV - (lAcc + pyAcc) * 0.5;
     this.extV += extA * dt;
     this.ext = clamp(this.ext + this.extV * dt, -0.18 * Lcmd, 0.18 * Lcmd);
 
@@ -88,7 +101,7 @@ export class CablePhysics {
 
     // Balanço no plano da tela
     const thA =
-      -(g / L) * Math.sin(this.theta) -
+      -(gEff / L) * Math.sin(this.theta) -
       (ax / L) * Math.cos(this.theta) -
       2 * lRate * this.omega -
       0.4 * this.omega;
@@ -97,7 +110,7 @@ export class CablePhysics {
 
     // Balanço em profundidade (aparece pela perspectiva)
     const phA =
-      -(g / L) * Math.sin(this.phi) -
+      -(gEff / L) * Math.sin(this.phi) -
       (az / L) * Math.cos(this.phi) -
       2 * lRate * this.phiV -
       0.5 * this.phiV;
