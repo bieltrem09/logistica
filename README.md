@@ -68,6 +68,10 @@ A sequência completa está descrita em `DIRECAO-DE-ARTE.md` (seção 4). Onde a
 | `assets/img/hero-guindaste.webp` (734 × 738) | Lança girada para descer do alto à esquerda; ganchos removidos | `--crane-ax` / `--crane-ay` (saída do cabo na polia principal) |
 | `assets/img/hero-guindaste-gancho.webp` (85 × 284) | Gancho auxiliar, em camada própria que balança como pêndulo | posição e eixo em `.hero__crane-hook` |
 
+Outras fotos já no site: `sobre-patio.webp` (seção 01, 1024 × 687) e `servicos-navio.webp` (bloco azul de
+Serviços, 1024 × 617, carregada antes com prioridade baixa para não "piscar" quando o bloco desce).
+Ainda sem arquivo (rodam os fundos de reserva): `hero-sky.webp`, `modal-mar.webp`, `modal-ar.webp` e as fotos dos veículos.
+
 Se trocar uma foto, meça de novo os pontos de encaixe. Sem os arquivos, o hero volta sozinho ao contêiner 3D
 (ou vetor 2D) e à lança vetorial. Use somente imagens próprias ou licenciadas, sem marca-d'água.
 

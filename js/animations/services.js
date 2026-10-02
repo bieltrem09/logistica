@@ -85,7 +85,8 @@ export function initSection5Animation() {
     tl.to(ct, { '--cable': 0, duration: 0.18, ease: 'power2.in' }, 0)
       .to(ct, { '--cut-left': `${slide.left}%`, '--cut-right': `${slide.right}%`, duration: 0.5, ease: 'power1.inOut' }, 0.1)
       .to(ct, { '--cut-left': `${field.left}%`, '--cut-right': `${field.right}%`, '--cut-h': `${field.h}em`, duration: 0.4, ease: 'power2.inOut' }, 0.6);
-    if (img) tl.fromTo(img, { yPercent: -8, scale: 1.15 }, { yPercent: 8, scale: 1, duration: 1 }, 0);
+    // a foto anda dentro do bloco; a escala sempre maior que o deslocamento (nunca aparece borda)
+    if (img) tl.fromTo(img, { yPercent: -7, scale: 1.22 }, { yPercent: 7, scale: 1.16, duration: 1 }, 0);
 
     return () => {
       stDrop.kill();
