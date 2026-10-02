@@ -25,6 +25,17 @@ export function createDriver() {
   const state = { progress: 0, vel: 0, velS: 0, introOffset: 0, pointer: 0 };
   const geom = {};
 
+  /**
+   * Forma da carga quando é foto (lida dos data-* do <img>, em frações da imagem):
+   *   hook  ponto onde o cabo entra no moitão · box  silhueta do contêiner
+   *   cover retângulo todo opaco que enche a tela quando o contêiner vem para a câmera
+   * Sem forma, valem as proporções do contêiner vetorial/3D.
+   */
+  let shape = null;
+  function setShape(s) {
+    shape = s;
+  }
+
   /** Mede o layout estático (offset*: ignora transformações). */
   function measure(hero, cargo) {
     const W = hero.offsetWidth;
@@ -33,35 +44,67 @@ export function createDriver() {
     const cable = parseFloat(getComputedStyle(cargo).paddingTop) || 0;
     const cargoLeft = cargo.offsetLeft;
     const cargoTop = cargo.offsetTop;
-    const restX = cargoLeft + w / 2;
-    const pivotY = -0.1 * H;
-    const hookY0 = cargoTop + cable + 0.08 * w;
-    Object.assign(geom, {
-      W,
-      H,
-      w,
-      cable,
-      cargoLeft,
-      cargoTop,
-      restX,
-      pivotY,
-      hookY0,
-      L0: hookY0 - pivotY,
-      l: 0.96 * w, // comprimento
-      h: 0.4 * w, // altura
-      d: 0.3866 * w, // profundidade
-      sling: 0.282 * w, // lingas do gancho ao teto
-      restCenterY: cargoTop + cable + 0.572 * w,
-      g: 4.2 * H,
-    });
-    // Desce até perto da base da tela, sem sair dela (no celular o contêiner já começa baixo)
-    geom.lowerPx = clamp(H * 0.9 - geom.restCenterY, H * 0.12, H * 0.4);
-    // A lança do guindaste desce junto e precisa aparecer abaixo do cabeçalho no fim da descida.
-    // Se a carga desce pouco (celular), a lança desce mais e recolhe o cabo na diferença.
+    const imgTop = cargoTop + cable;
+    Object.assign(geom, { W, H, w, cable, cargoLeft, cargoTop, g: 4.2 * H, d: 0.3866 * w, sling: 0.282 * w });
+
+    if (shape) {
+      const ih = w * shape.ratio;
+      const [bx0, by0, bx1, by1] = shape.box;
+      const [cx0, cy0, cx1, cy1] = shape.cover;
+      Object.assign(geom, {
+        restX: cargoLeft + shape.hook[0] * w,
+        hookY0: imgTop + shape.hook[1] * ih,
+        hookLocal: { x: shape.hook[0] * w, y: shape.hook[1] * ih },
+        imgH: ih,
+        l: (bx1 - bx0) * w,
+        h: (by1 - by0) * ih,
+        boxCX: cargoLeft + ((bx0 + bx1) / 2) * w,
+        restCenterY: imgTop + ((by0 + by1) / 2) * ih,
+        coverW: (cx1 - cx0) * w,
+        coverH: (cy1 - cy0) * ih,
+        coverCX: cargoLeft + ((cx0 + cx1) / 2) * w,
+        coverCY: imgTop + ((cy0 + cy1) / 2) * ih,
+      });
+    } else {
+      const restX = cargoLeft + w / 2;
+      const restCenterY = imgTop + 0.572 * w;
+      Object.assign(geom, {
+        restX,
+        hookY0: imgTop + 0.08 * w,
+        hookLocal: { x: w / 2, y: 0.08 * w },
+        imgH: 0.78 * w,
+        l: 0.96 * w, // comprimento
+        h: 0.4 * w, // altura
+        boxCX: restX,
+        restCenterY,
+        coverW: 0.96 * w,
+        coverH: 0.4 * w,
+        coverCX: restX,
+        coverCY: restCenterY,
+      });
+    }
+
+    // Guindaste: na carga da página ele inteiro (com o gancho auxiliar pendurado) fica acima da tela
     const header = document.querySelector('.site-header')?.offsetHeight || 0;
-    const crane = document.querySelector('.hero__crane-body');
-    const craneH = crane ? crane.offsetHeight : 0;
-    geom.boomDrop = Math.max(geom.lowerPx, header + 0.9 * craneH + 0.02 * H - pivotY);
+    const crane = document.querySelector('.hero__crane');
+    let below = 0;
+    let anchorDown = 0;
+    if (crane && crane.offsetHeight) {
+      const ay = crane.offsetHeight * (parseFloat(getComputedStyle(crane).getPropertyValue('--crane-ay')) || 0.85);
+      let bottom = crane.offsetHeight;
+      const aux = crane.querySelector('.hero__crane-hook');
+      if (aux && aux.offsetHeight) bottom = Math.max(bottom, aux.offsetTop + aux.offsetHeight);
+      below = bottom - ay;
+      anchorDown = ay;
+    }
+    geom.pivotY = Math.min(-0.1 * H, -(below + 12));
+    geom.L0 = geom.hookY0 - geom.pivotY;
+
+    // Desce até a base do contêiner chegar perto do pé da tela
+    geom.lowerPx = clamp(H * 0.94 - (geom.restCenterY + geom.h / 2), H * 0.1, H * 0.4);
+    // A lança desce junto e no fim a cabeça aparece abaixo do cabeçalho. Se a carga desce pouco
+    // (celular), a lança desce mais e recolhe o cabo na diferença.
+    geom.boomDrop = Math.max(geom.lowerPx, header + Math.min(anchorDown, 0.1 * H) + 0.03 * H - geom.pivotY);
     return geom;
   }
 
@@ -132,5 +175,5 @@ export function createDriver() {
     };
   }
 
-  return { physics, state, geom, measure, update };
+  return { physics, state, geom, measure, update, setShape };
 }

@@ -251,11 +251,12 @@
           </svg>
 
           <!-- Guindaste (só com animação): a lança basculante que segura o cabo e desce com a rolagem.
-               Foto opcional: assets/img/hero-guindaste.png — recorte com fundo transparente só da lança,
-               com a polia da ponta encostada na borda direita (ver README). Sem a foto, roda o vetor. -->
+               Foto recortada (lança vindo do alto à esquerda) + gancho auxiliar em camada própria, que balança.
+               Pontos de encaixe em --crane-ax/--crane-ay (css/style.css). Sem a foto, roda o vetor. -->
           <div class="hero__crane" aria-hidden="true">
             <div class="hero__crane-body media">
-              <img class="hero__crane-img" src="assets/img/hero-guindaste.png" alt="" decoding="async">
+              <img class="hero__crane-img" src="assets/img/hero-guindaste.webp" width="734" height="738" alt="" decoding="async">
+              <img class="hero__crane-hook" src="assets/img/hero-guindaste-gancho.webp" width="85" height="284" alt="" decoding="async">
               <svg class="media__fallback hero__crane-svg" viewBox="0 0 2400 160" preserveAspectRatio="xMaxYMid meet" focusable="false">
                 <defs>
                   <pattern id="crane-lattice" width="120" height="76" patternUnits="userSpaceOnUse">
@@ -289,7 +290,8 @@
           <!-- Camada 3: contêiner suspenso (PNG recortado, com vetor de reserva) -->
           <div class="hero__cargo media" data-anim="parallax" data-speed="1.15">
             <span class="hero__cable" aria-hidden="true"></span>
-            <img class="hero__cargo-img" src="assets/img/hero-container.png" width="2000" height="1560" alt="Contêiner laranja da VETOR suspenso por cabos de aço" decoding="async" fetchpriority="high">
+            <!-- data-*: pontos da foto em frações (cabo no moitão, silhueta, área toda opaca que cobre a tela) -->
+            <img class="hero__cargo-img" src="assets/img/hero-container.webp" width="1600" height="1298" alt="Contêiner vermelho suspenso pelo moitão de um guindaste" decoding="async" fetchpriority="high" data-hook="0.5569 0.0277" data-box="0.0044 0.057 0.9956 0.9553" data-cover="0.355 0.3513 0.7125 0.6263">
             <svg class="media__fallback hero__cargo-svg" viewBox="0 0 1000 780" role="img" aria-label="Contêiner laranja da VETOR suspenso por cabos de aço">
               <defs>
                 <pattern id="cnt-ribs" width="40" height="10" patternUnits="userSpaceOnUse">

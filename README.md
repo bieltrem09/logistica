@@ -60,14 +60,16 @@ A sequência completa está descrita em `DIRECAO-DE-ARTE.md` (seção 4). Onde a
 | Peso do contêiner azul (mola) | `createSpring({ stiffness, damping })` em `js/animations/services.js` |
 | Pêndulo do pátio e encaixe | `pendulum` e `snap` em `js/animations/yard.js` |
 
-**Fotos do hero (opcionais, entram sozinhas quando o arquivo existe):**
+**Fotos do hero** (recortes com fundo transparente em WebP, gerados a partir das imagens enviadas pelo cliente):
 
-| Arquivo | O que deve ser | Sem o arquivo |
+| Arquivo | O que é | Pontos de encaixe |
 |---|---|---|
-| `assets/img/hero-container.png` | Recorte com fundo transparente, proporção 1000 × 780, gancho no centro do topo (como o vetor). O hero usa a foto com a mesma física e as portas recebem a foto. | Contêiner 3D (ou vetor 2D sem WebGL) |
-| `assets/img/hero-guindaste.png` | Recorte com fundo transparente **só da lança** (sem os ganchos da foto), na horizontal, com a polia da ponta encostada na borda direita. Ajuste fino da posição da polia em `--crane-ax` / `--crane-ay` (`css/style.css`). | Lança vetorial |
+| `assets/img/hero-container.webp` (1600 × 1298) | Contêiner vermelho com o moitão; céu e cabos acima do moitão removidos | `data-hook`, `data-box`, `data-cover` no `<img>` (frações da imagem) e `--hook-x` / `--hook-drop` no CSS para o cabo estático |
+| `assets/img/hero-guindaste.webp` (734 × 738) | Lança girada para descer do alto à esquerda; ganchos removidos | `--crane-ax` / `--crane-ay` (saída do cabo na polia principal) |
+| `assets/img/hero-guindaste-gancho.webp` (85 × 284) | Gancho auxiliar, em camada própria que balança como pêndulo | posição e eixo em `.hero__crane-hook` |
 
-Use somente arquivos licenciados, sem marca-d'água (a prévia com marca-d'água de banco de imagens não pode ser publicada).
+Se trocar uma foto, meça de novo os pontos de encaixe. Sem os arquivos, o hero volta sozinho ao contêiner 3D
+(ou vetor 2D) e à lança vetorial. Use somente imagens próprias ou licenciadas, sem marca-d'água.
 
 **Guindaste:** a lança é basculante. Na carga da página a ponta fica acima da tela; rolando, é ela que desce levando
 o contêiner e aparece por baixo do cabeçalho. A lança acompanha o carro (mouse e rolagem rápida), cede quando o cabo

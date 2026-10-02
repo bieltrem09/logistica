@@ -49,6 +49,17 @@ async function photoReady(img, media) {
   return img.naturalWidth > 0 && !media.classList.contains('is-missing');
 }
 
+/** Forma da foto do contêiner, dos data-* do <img> (frações da imagem). */
+function readShape(img) {
+  const nums = (attr, fallback) => (img.dataset[attr] || fallback).trim().split(/\s+/).map(Number);
+  return {
+    ratio: img.naturalHeight / img.naturalWidth,
+    hook: nums('hook', '0.5 0.08'),
+    box: nums('box', '0.02 0.37 0.98 0.78'),
+    cover: nums('cover', '0.1 0.45 0.9 0.72'),
+  };
+}
+
 /**
  * Vista 2D (foto real ou vetor): o contêiner gira em torno do gancho e o cabo
  * é desenhado à parte, do carro do guindaste até o gancho, sempre esticado.
@@ -62,27 +73,34 @@ function createHero2D(heroEl, cargo, { photo = false } = {}) {
   let G;
   const base = { x: 0, y: 0 };
 
+  // Escala que faz a área toda opaca (cover) encher a tela no fim da aproximação
+  const coverScale = () => Math.max(G.W / G.coverW, G.H / G.coverH) * 1.08;
+
   return {
     layout(geom) {
       G = geom;
-      cargo.style.transformOrigin = `${G.w / 2}px ${G.hookY0 - G.cargoTop}px`;
+      cargo.style.transformOrigin = `${G.hookLocal.x}px ${G.cable + G.hookLocal.y}px`;
       if (photo) {
         // As portas em DOM recebem a foto no mesmo enquadramento do fim da aproximação
-        const cover = Math.max(G.W / G.l, G.H / G.h) * 1.08;
-        const imgW = (G.l * cover) / 0.96;
-        doors.style.setProperty('--door-size', `${imgW}px auto`);
-        doors.style.setProperty('--door-pos', `${G.W / 2 - 0.5 * imgW}px ${G.H / 2 - 0.572 * imgW}px`);
+        const cover = coverScale();
+        const imgTop = G.cargoTop + G.cable;
+        const left = G.W / 2 - (G.coverCX - G.cargoLeft) * cover;
+        const top = G.H / 2 - (G.coverCY - imgTop) * cover;
+        doors.style.setProperty('--door-size', `${G.w * cover}px auto`);
+        doors.style.setProperty('--door-pos', `${left}px ${top}px`);
       }
     },
     render(pose) {
       const a = pose.approach;
-      const drop = G.restCenterY - G.hookY0; // gancho → centro do contêiner
-      const cover = Math.max(G.W / G.l, G.H / G.h) * 1.08;
+      const cover = coverScale();
       const depth = 1 + pose.hz / (3 * G.H); // balanço em profundidade vira escala
+      // vetor gancho → centro da área de cobertura; no fim ela fica no centro da tela
+      const cdx = G.coverCX - G.restX;
+      const cdy = G.coverCY - G.hookY0;
       const dx = pose.hx - G.restX;
       const dy = pose.hy - G.hookY0;
-      const fx = G.W / 2 - G.restX;
-      const fy = G.H / 2 - drop * cover - G.hookY0;
+      const fx = G.W / 2 - cdx * cover - G.restX;
+      const fy = G.H / 2 - cdy * cover - G.hookY0;
       const tx = dx + (fx - dx) * a;
       const ty = dy + (fy - dy) * a;
       const rot = -(pose.theta + pose.alpha) * (1 - a);
@@ -95,9 +113,11 @@ function createHero2D(heroEl, cargo, { photo = false } = {}) {
       const ang = Math.atan2(hy - pose.py, hx - pose.tx) - Math.PI / 2;
       rope.style.transform = `translate3d(${pose.tx}px, ${pose.py}px, 0) rotate(${ang}rad) scaleY(${len})`;
 
-      const r = (drop + G.h / 2) * sc;
-      base.x = hx - r * Math.sin(rot);
-      base.y = hy + r * Math.cos(rot);
+      // base da silhueta (prumo da telemetria): gancho + rotação do vetor até o meio da base
+      const bx = (G.boxCX - G.restX) * sc;
+      const by = (G.restCenterY - G.hookY0 + G.h / 2) * sc;
+      base.x = hx + bx * Math.cos(rot) - by * Math.sin(rot);
+      base.y = hy + bx * Math.sin(rot) + by * Math.cos(rot);
     },
     tagPoint() {
       return null;
@@ -116,16 +136,39 @@ function createHero2D(heroEl, cargo, { photo = false } = {}) {
 function createCrane(heroEl) {
   const crane = q('.hero__crane', heroEl);
   if (!crane) return null;
+  const aux = q('.hero__crane-hook', crane);
   let ax = 0;
   let ay = 0;
+  // Gancho auxiliar (foto): pêndulo próprio, sacudido pela aceleração da ponta da lança
+  const p = { ang: 0, vel: 0, x: null, y: null, vx: 0, vy: 0, axl: 0, ayl: 0, len: 120, g: 3600 };
   return {
     layout() {
       const cs = getComputedStyle(crane);
       ax = crane.offsetWidth * (parseFloat(cs.getPropertyValue('--crane-ax')) || 0.975);
       ay = crane.offsetHeight * (parseFloat(cs.getPropertyValue('--crane-ay')) || 0.85);
+      if (aux) p.len = Math.max(40, aux.offsetHeight * 0.75);
+      p.g = 4.2 * heroEl.offsetHeight;
     },
-    render(pose) {
+    render(pose, dt) {
       crane.style.transform = `translate3d(${pose.tx - ax}px, ${pose.py - ay}px, 0)`;
+      if (!aux || !aux.offsetHeight || !dt) return;
+      if (p.x === null) {
+        p.x = pose.tx;
+        p.y = pose.py;
+      }
+      const vx = (pose.tx - p.x) / dt;
+      const vy = (pose.py - p.y) / dt;
+      // aceleração da ponta da lança, suavizada (a medida quadro a quadro é ruidosa)
+      p.axl += (clamp((vx - p.vx) / dt, -20000, 20000) - p.axl) * Math.min(1, dt * 12);
+      p.ayl += (clamp((vy - p.vy) / dt, -20000, 20000) - p.ayl) * Math.min(1, dt * 12);
+      Object.assign(p, { x: pose.tx, y: pose.py, vx, vy });
+      const gEff = Math.max(0.25 * p.g, p.g - p.ayl);
+      // pouco atrito: oscila e assenta devagar; limitado a ~20° para não ficar caricato
+      const acc = -(gEff / p.len) * Math.sin(p.ang) - (p.axl / p.len) * Math.cos(p.ang) - 0.9 * p.vel;
+      p.vel += acc * dt;
+      p.ang = clamp(p.ang + p.vel * dt, -0.35, 0.35);
+      if (Math.abs(p.ang) === 0.35) p.vel *= 0.5;
+      aux.style.transform = `rotate(${-p.ang}rad)`;
     },
   };
 }
@@ -152,12 +195,12 @@ function createHud(heroEl) {
       svg.setAttribute('viewBox', `0 0 ${G.W} ${G.H}`);
       ty = G.restCenterY + G.lowerPx + G.h / 2 + 0.012 * G.H;
       const half = G.l / 2 + 0.03 * G.w;
-      const x0 = G.restX - half;
-      const x1 = G.restX + half;
+      const x0 = G.boxCX - half;
+      const x1 = G.boxCX + half;
       const t = 0.035 * G.w;
       target.setAttribute(
         'd',
-        `M${x0} ${ty - t}V${ty}H${x0 + t}M${x1} ${ty - t}V${ty}H${x1 - t}M${G.restX} ${ty - 0.6 * t}V${ty + 0.6 * t}`,
+        `M${x0} ${ty - t}V${ty}H${x0 + t}M${x1} ${ty - t}V${ty}H${x1 - t}M${G.boxCX} ${ty - 0.6 * t}V${ty + 0.6 * t}`,
       );
       dock.setAttribute('x', x1 - t);
       dock.setAttribute('y', ty + 18);
@@ -190,6 +233,7 @@ export async function setupHero(textures) {
   const photo = await photoReady(q('.hero__cargo-img', cargo), cargo);
 
   const driver = createDriver();
+  if (photo) driver.setShape(readShape(q('.hero__cargo-img', cargo)));
   driver.measure(heroEl, cargo);
   driver.state.introOffset = -1.1 * driver.geom.H;
 
@@ -226,7 +270,7 @@ export async function setupHero(textures) {
     const pose = driver.update(dt);
     if (driver.state.progress > HERO_PHASES.approachEnd + 0.02) return;
     view.render(pose, driver.geom);
-    crane?.render(pose);
+    crane?.render(pose, dt);
     hud?.render(view.basePoint(), pose);
     if (is3d && tag) {
       const pt = view.tagPoint();

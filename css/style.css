@@ -876,9 +876,9 @@ button {
 .hero__cable {
   position: absolute;
   top: -60svh;
-  left: calc(50% - 1.5px);
+  left: calc(var(--hook-x, 50%) - 1.5px);
   width: 3px;
-  height: calc(60svh + var(--cable) + 2px);
+  height: calc(60svh + var(--cable) + var(--hook-drop, 0px) + 2px);
   background: var(--ink);
 }
 
@@ -890,6 +890,17 @@ button {
   aspect-ratio: 1000 / 780;
   object-fit: contain;
   object-position: 50% 0;
+}
+
+/* Foto do contêiner: proporção própria; o cabo estático desce até o moitão da foto
+   (mesmos números do data-hook do <img>: x 55,69%, y 2,77% de uma altura de 0,811 × largura) */
+.hero__cargo-img {
+  aspect-ratio: auto 1600 / 1298;
+}
+
+.hero__cargo:not(.is-missing) {
+  --hook-x: 55.69%;
+  --hook-drop: calc(var(--w) * 0.0225);
 }
 
 .hero__cargo > .hero__cargo-img {
@@ -2787,10 +2798,27 @@ html.has-motion .hero__crane {
   will-change: transform;
 }
 
-/* Com a foto (recorte só da lança, polia na borda direita): ajuste fino da âncora aqui */
+/* Com a foto (assets/img/hero-guindaste.webp, 734 × 738): a lança desce do alto à esquerda e o cabo
+   sai da polia principal; o gancho auxiliar pendura da polia pequena. Pontos medidos na foto. */
 html.has-motion .hero__crane:has(.hero__crane-body:not(.is-missing)) {
-  --crane-ax: 0.985;
-  --crane-ay: 0.8;
+  --crane-h: clamp(220px, min(62svh, 95vw), 640px);
+  --crane-ax: 0.6873;
+  --crane-ay: 0.8591;
+  width: calc(var(--crane-h) * 734 / 738);
+}
+
+.hero__crane-body > .hero__crane-hook {
+  position: absolute;
+  /* ponto de pendurar (0,7795; 0,9785 da foto); o cabo está a 44,7% da largura do gancho */
+  left: calc(77.95% - 0.447 * 11.58%);
+  top: 97.85%;
+  width: 11.58%;
+  height: auto;
+  max-width: none;
+  object-fit: contain;
+  filter: none;
+  transform-origin: 44.7% 0;
+  will-change: transform;
 }
 
 .hero__crane-body {
@@ -2821,12 +2849,13 @@ html.has-motion .hero__crane:has(.hero__crane-body:not(.is-missing)) {
 html.has-motion:not(.has-3d) .hero__rope {
   position: absolute;
   top: 0;
-  left: -1.5px;
+  left: -3.5px;
   z-index: 3;
   display: block;
-  width: 3px;
+  width: 7px;
   height: 1px;
-  background: var(--ink);
+  /* cabo de aço em dois fios, como os da foto do guindaste */
+  background: linear-gradient(90deg, transparent 0 1px, #2E3236 1px 3px, transparent 3px 4px, #3B3F43 4px 6px, transparent 6px);
   transform-origin: 50% 0;
   pointer-events: none;
   will-change: transform;
