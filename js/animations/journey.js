@@ -111,11 +111,13 @@ function readStrip(el) {
  * Desenha as rotas no tamanho da faixa ABERTA (não no tamanho atual: durante o acordeão
  * a faixa muda de largura, a rota só é comprimida com scaleX).
  */
-function layoutRoutes(strips, pin) {
+function layoutRoutes(strips, probe) {
   const desktop = window.matchMedia('(min-width: 900px)').matches;
+  // Mede pela sonda, não pelo pin: enquanto está fixado, o ScrollTrigger congela a largura
+  // do pin em px e, num resize, ele ainda devolveria o tamanho antigo.
   strips.forEach((s) => {
-    s.W = desktop ? pin.offsetWidth * OPEN : s.el.offsetWidth;
-    s.H = pin.offsetHeight;
+    s.W = desktop ? probe.offsetWidth * OPEN : s.el.offsetWidth;
+    s.H = probe.offsetHeight;
     s.route.style.width = `${s.W}px`;
     s.route.setAttribute('viewBox', `0 0 ${s.W} ${s.H}`);
     const d = ROUTES[s.key](s.W, s.H);
@@ -211,6 +213,65 @@ const DRIVE = {
   },
 };
 
+/**
+ * O contêiner VTRU 204816-3 trocando de veículo, numa timeline já montada.
+ * `at` = instantes dos capítulos; `pos(s, p)` = ponto na tela da posição `p` (0–1) da rota
+ * de `s` com o capítulo de `s` aberto (desktop e celular calculam cada um o seu).
+ */
+function cargoChain(tl, cargo, { mar, terra, ar }, at, pos) {
+  const dockMar = () => pos(mar, 1);
+  const pickTerra = () => pos(terra, terra.entry);
+  const dockTerra = () => pos(terra, 1);
+  const pickAr = () => pos(ar, ar.entry);
+  const destAr = () => pos(ar, 1);
+  const pickT = { terra: timeAt(PROFILES.terra, terra.entry), ar: timeAt(PROFILES.ar, ar.entry) };
+
+  // Navio atracado: o contêiner sai do convés (sobe no guindaste do cais)
+  tl.fromTo(
+    cargo,
+    { autoAlpha: 0, scale: 0.8, x: () => dockMar().x, y: () => dockMar().y },
+    { autoAlpha: 1, scale: 1.25, duration: 0.3, ease: 'power2.out' },
+    at.marDock,
+  )
+    // A câmera acompanha a carga: o cenário muda por baixo dela até o ponto de coleta
+    .to(cargo, { x: () => pickTerra().x, y: () => pickTerra().y, scale: 1, duration: 0.9, ease: 'power2.inOut' }, at.terraOpen)
+    // O caminhão passa pelo ponto de coleta e leva o contêiner
+    .to(cargo, { autoAlpha: 0, scale: 0.8, duration: 0.12 }, at.terraGo + at.terraDur * pickT.terra)
+    // Caminhão na doca do aeroporto: o contêiner é descarregado
+    .fromTo(
+      cargo,
+      { x: () => dockTerra().x, y: () => dockTerra().y },
+      { autoAlpha: 1, scale: 1.25, duration: 0.3, ease: 'power2.out', immediateRender: false },
+      at.terraDock,
+    )
+    .to(cargo, { x: () => pickAr().x, y: () => pickAr().y, scale: 1, duration: 0.9, ease: 'power2.inOut' }, at.arOpen)
+    .to(cargo, { autoAlpha: 0, scale: 0.8, duration: 0.12 }, at.arGo + at.arDur * pickT.ar)
+    // Pouso: o contêiner desce no destino, ao lado do avião (a etiqueta não fica embaixo dele)
+    .fromTo(
+      cargo,
+      { x: () => destAr().x + 0.07 * innerWidth, y: () => destAr().y + 0.12 * vh(), scale: 1.4 },
+      { autoAlpha: 1, scale: 1, duration: 0.35, ease: 'power3.out', immediateRender: false },
+      at.arLand,
+    )
+    .call(() => ar.route.classList.add('is-arrived'), null, at.arLand + 0.05)
+    .call(() => ar.route.classList.remove('is-arrived'), null, at.arLand);
+}
+
+/**
+ * Depois de um resize as rotas são redesenhadas no novo tamanho, mas um tween só chama
+ * onUpdate quando o tempo da timeline muda. Se a pessoa redimensiona sem rolar, o veículo
+ * ficaria nas coordenadas antigas, fora da rota. Isto reposiciona tudo no tempo atual.
+ */
+function redrawTravels(tl, travels, finalAt = Infinity) {
+  const t = tl.time();
+  travels.forEach(({ s, at, dur }) => {
+    const p = clamp((t - at) / dur, 0, 1);
+    if (p <= 0) s.done.style.strokeDashoffset = s.len;
+    else if (p >= 1) s.done.style.strokeDashoffset = 0;
+    if (p > 0 && t < finalAt) DRIVE[s.key](s, p);
+  });
+}
+
 export function initLogisticsJourney({ smoother }) {
   const section = q('.modais');
   const pin = q('.modais__pin');
@@ -218,10 +279,15 @@ export function initLogisticsJourney({ smoother }) {
   const cargo = q('.journey-cargo', pin);
   const strips = qa('.modal-strip').map(readStrip);
   const [mar, terra, ar] = strips;
-  const pinW = () => pin.offsetWidth;
+  const pinW = () => section.offsetWidth;
 
-  layoutRoutes(strips, pin);
-  ScrollTrigger.addEventListener('refreshInit', () => layoutRoutes(strips, pin));
+  // Sonda invisível com o tamanho do pin (100% × 100svh, mínimo 600px), fora do pin
+  const probe = document.createElement('div');
+  probe.className = 'modais__probe';
+  probe.setAttribute('aria-hidden', 'true');
+  section.prepend(probe);
+  layoutRoutes(strips, probe);
+  ScrollTrigger.addEventListener('refreshInit', () => layoutRoutes(strips, probe));
 
   const scrollToLabel = (tl, label) => {
     const st = tl.scrollTrigger;
@@ -235,7 +301,10 @@ export function initLogisticsJourney({ smoother }) {
     // (laterais negativas: os veículos do quadro final continuam cruzando as divisões)
     .fromTo(strips.map((s) => s.el), { clipPath: 'inset(22% -100% 0% -100%)' }, { clipPath: 'inset(0% -100% 0% -100%)', stagger: 0.12, duration: 0.7 }, 0)
     .fromTo(strips.map((s) => s.bg), { scale: 1.22 }, { scale: 1, stagger: 0.12, duration: 0.9 }, 0)
-    .from(strips.map((s) => s.top), { yPercent: -60, opacity: 0, stagger: 0.1, duration: 0.4 }, 0.45);
+    // (clip-path, não opacidade: a opacidade desses rótulos pertence à timeline fixada abaixo;
+    // se as duas mexessem nela, os rótulos de Terra/Ar podiam sumir ao rolar de volta)
+    .fromTo(strips.map((s) => s.top), { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', stagger: 0.1, duration: 0.4 }, 0.45);
+
 
   const mm = gsap.matchMedia();
 
@@ -243,14 +312,25 @@ export function initLogisticsJourney({ smoother }) {
   mm.add('(min-width: 900px)', () => {
     const els = strips.map((s) => s.el);
     const routeScale = (basis) => basis / OPEN;
-    gsap.set(strips.map((s) => s.veh), { autoAlpha: 0, x: 0, y: 0, rotation: 0 });
+    gsap.set(strips.map((s) => s.veh), { autoAlpha: 0, x: 0, y: 0, rotation: 0, xPercent: -50, yPercent: -50 });
     gsap.set(strips.map((s) => s.route), { scaleX: routeScale(THIRD), transformOrigin: '0% 50%' });
     gsap.set(cargo, { autoAlpha: 0 });
 
+    const travels = [];
     const tl = gsap.timeline({
       defaults: { ease: 'none' },
-      scrollTrigger: { trigger: pin, start: 'top top', end: () => `+=${vh() * 6}`, pin: true, scrub: true, invalidateOnRefresh: true },
+      scrollTrigger: {
+        trigger: pin,
+        start: 'top top',
+        end: () => `+=${vh() * 6}`,
+        pin: true,
+        scrub: true,
+        invalidateOnRefresh: true,
+      },
     });
+    // (evento global e não onRefresh: o onRefresh pode rodar antes de `tl` existir)
+    const redraw = () => redrawTravels(tl, travels, tl.labels.final);
+    ScrollTrigger.addEventListener('refresh', redraw);
 
     /** Abre um capítulo: faixa ativa 74%, demais viram abas; rotas acompanham a largura. */
     const open = (active, at) => {
@@ -274,6 +354,7 @@ export function initLogisticsJourney({ smoother }) {
     const fold = (s, at) => tl.to(s.labels, { opacity: 0, duration: 0.2 }, at).to(s.plan, { opacity: 0.4, duration: 0.3 }, at);
     const travel = (s, at, duration) => {
       const o = { t: 0 };
+      travels.push({ s, at, dur: duration });
       tl.fromTo(o, { t: 0 }, { t: 1, duration, onUpdate: () => DRIVE[s.key](s, o.t) }, at);
     };
     /** Posição global (no pin) de um ponto da rota de `s`, com a faixa de `s` começando em `left`. */
@@ -281,8 +362,6 @@ export function initLogisticsJourney({ smoother }) {
       const p = pointOnPath(s.done, s.len, pos);
       return { x: left * pinW() + p.x, y: p.y };
     };
-    const pickT = { terra: timeAt(PROFILES.terra, terra.entry), ar: timeAt(PROFILES.ar, ar.entry) };
-
     // ── MAR ──
     tl.addLabel('mar', 0).set(els, { overflow: 'hidden' }, 0.001);
     open(mar, 0);
@@ -295,73 +374,42 @@ export function initLogisticsJourney({ smoother }) {
       .fromTo(q('img', mar.bg), { yPercent: -10 }, { yPercent: 10, duration: 3.6 }, 0);
     travel(mar, 0.9, 2.6);
 
-    // Navio atracado: o contêiner sai do convés (sobe no guindaste do cais)
-    const dockMar = () => routePoint(mar, 1, 0);
-    tl.fromTo(
-      cargo,
-      { autoAlpha: 0, scale: 0.8, x: () => dockMar().x, y: () => dockMar().y },
-      { autoAlpha: 1, scale: 1.25, duration: 0.3, ease: 'power2.out' },
-      3.5,
-    );
-
     // ── MAR → TERRA ── a câmera acompanha a carga; o cenário desliza por baixo dela
     tl.addLabel('terra', 3.8);
     open(terra, 3.8);
     fold(mar, 3.8);
     plan(terra, 4.1);
-    const pickTerra = () => routePoint(terra, terra.entry, TAB);
     tl.to([mar.body, mar.top, mar.tel], { opacity: 0, duration: 0.3 }, 3.8)
       .to(mar.veh, { autoAlpha: 0, duration: 0.4 }, 3.8)
       .to(mar.tab, { opacity: 1, duration: 0.3 }, 4.2)
       .to(terra.tab, { opacity: 0, duration: 0.2 }, 3.8)
       .to([terra.body, terra.top, terra.tel], { opacity: 1, duration: 0.4 }, 4.2)
-      .to(cargo, { x: () => pickTerra().x, y: () => pickTerra().y, scale: 1, duration: 0.9, ease: 'power2.inOut' }, 3.8)
       .set(terra.veh, { autoAlpha: 1 }, 4.4)
       .to(terra.bg, { '--bgy': '-1700px', duration: 3.4 }, 3.8)
       .fromTo(q('img', terra.bg), { yPercent: 10 }, { yPercent: -10, duration: 3.4 }, 3.8);
     travel(terra, 4.4, 2.6);
-    // O caminhão passa pelo ponto de coleta e leva o contêiner
-    tl.to(cargo, { autoAlpha: 0, scale: 0.8, duration: 0.12 }, 4.4 + 2.6 * pickT.terra);
-
-    // Caminhão na doca do aeroporto: o contêiner é descarregado
-    const dockTerra = () => routePoint(terra, 1, TAB);
-    tl.fromTo(
-      cargo,
-      { x: () => dockTerra().x, y: () => dockTerra().y },
-      { autoAlpha: 1, scale: 1.25, duration: 0.3, ease: 'power2.out', immediateRender: false },
-      7.0,
-    );
-
     // ── TERRA → AR ── da estrada para a pista
     tl.addLabel('ar', 7.3);
     open(ar, 7.3);
     fold(terra, 7.3);
     plan(ar, 7.6);
-    const pickAr = () => routePoint(ar, ar.entry, 2 * TAB);
     tl.to([terra.body, terra.top, terra.tel], { opacity: 0, duration: 0.3 }, 7.3)
       .to(terra.veh, { autoAlpha: 0, duration: 0.4 }, 7.3)
       .to(terra.tab, { opacity: 1, duration: 0.3 }, 7.7)
       .to(ar.tab, { opacity: 0, duration: 0.2 }, 7.3)
       .to([ar.body, ar.top, ar.tel], { opacity: 1, duration: 0.4 }, 7.7)
-      .to(cargo, { x: () => pickAr().x, y: () => pickAr().y, scale: 1, duration: 0.9, ease: 'power2.inOut' }, 7.3)
       .to(ar.veh, { autoAlpha: 1, duration: 0.3 }, 7.9)
       .fromTo(ar.clouds, { yPercent: -12 }, { yPercent: 26, duration: 3.2 }, 7.6)
       .to(ar.bg, { '--bgx': '320px', '--bgy': '520px', duration: 3.6 }, 7.3)
       .fromTo(q('img', ar.bg), { yPercent: -10 }, { yPercent: 10, duration: 3.6 }, 7.3);
     travel(ar, 7.9, 2.8);
-    tl.to(cargo, { autoAlpha: 0, scale: 0.8, duration: 0.12 }, 7.9 + 2.8 * pickT.ar);
-
-    // Pouso: o contêiner desce no destino e o ponto final pulsa
-    // (ao lado do avião, para a etiqueta não ficar embaixo dele)
-    const destAr = () => routePoint(ar, 1, 2 * TAB);
-    tl.fromTo(
-      cargo,
-      { x: () => destAr().x + 0.07 * pinW(), y: () => destAr().y + 0.12 * vh(), scale: 1.4 },
-      { autoAlpha: 1, scale: 1, duration: 0.35, ease: 'power3.out', immediateRender: false },
-      10.7,
-    )
-      .call(() => ar.route.classList.add('is-arrived'), null, 10.75)
-      .call(() => ar.route.classList.remove('is-arrived'), null, 10.7);
+    // O contêiner troca de veículo. Cada ponto é calculado com a faixa dele aberta, e no
+    // acordeão a faixa aberta começa depois das abas à esquerda: mar 0, terra 13%, ar 26%.
+    const LEFT = { mar: 0, terra: TAB, ar: 2 * TAB };
+    cargoChain(tl, cargo, { mar, terra, ar }, {
+      marDock: 3.5, terraOpen: 3.8, terraGo: 4.4, terraDur: 2.6, terraDock: 7.0,
+      arOpen: 7.3, arGo: 7.9, arDur: 2.8, arLand: 10.7,
+    }, (s, p) => routePoint(s, p, LEFT[s.key]));
 
     // ── FINAL ── a câmera se afasta: o tríptico se recompõe com as três rotas feitas
     tl.addLabel('final', 11.2);
@@ -406,18 +454,33 @@ export function initLogisticsJourney({ smoother }) {
       s.el.addEventListener('focusin', fn);
       return [s.el, fn];
     });
-    return () => handlers.forEach(([el, fn]) => el.removeEventListener('focusin', fn));
+    return () => {
+      handlers.forEach(([el, fn]) => el.removeEventListener('focusin', fn));
+      ScrollTrigger.removeEventListener('refresh', redraw);
+    };
   });
 
   /* ─────────── Celular: uma faixa por tela, a trilha desliza ─────────── */
   mm.add('(max-width: 899px)', () => {
-    gsap.set(strips.map((s) => s.veh), { autoAlpha: 0, x: 0, y: 0, rotation: 0 });
+    gsap.set(strips.map((s) => s.veh), { autoAlpha: 0, x: 0, y: 0, rotation: 0, xPercent: -50, yPercent: -50 });
+    gsap.set(cargo, { autoAlpha: 0 });
+    const travels = [];
     const tl = gsap.timeline({
       defaults: { ease: 'none' },
-      scrollTrigger: { trigger: pin, start: 'top top', end: () => `+=${vh() * 4.2}`, pin: true, scrub: true, invalidateOnRefresh: true },
+      scrollTrigger: {
+        trigger: pin,
+        start: 'top top',
+        end: () => `+=${vh() * 4.2}`,
+        pin: true,
+        scrub: true,
+        invalidateOnRefresh: true,
+      },
     });
+    const redraw = () => redrawTravels(tl, travels);
+    ScrollTrigger.addEventListener('refresh', redraw);
     const travel = (s, at, duration) => {
       const o = { t: 0 };
+      travels.push({ s, at, dur: duration });
       tl.fromTo(o, { t: 0 }, { t: 1, duration, onUpdate: () => DRIVE[s.key](s, o.t) }, at);
     };
     const plan = (s, at) =>
@@ -450,10 +513,52 @@ export function initLogisticsJourney({ smoother }) {
     tl.set(ar.veh, { autoAlpha: 1 }, 6.4)
       .fromTo(ar.clouds, { yPercent: -12 }, { yPercent: 26, duration: 2.6 }, 6);
     travel(ar, 6.4, 2.2);
-    tl.call(() => ar.route.classList.add('is-arrived'), null, 8.62)
-      .call(() => ar.route.classList.remove('is-arrived'), null, 8.6)
-      .set({}, {}, 9);
+    // O mesmo contêiner troca de veículo: ele fica parado na tela e a trilha desliza por baixo
+    // (cada faixa ocupa a tela inteira quando é a ativa, então o ponto da rota já é o da tela)
+    cargoChain(tl, cargo, { mar, terra, ar }, {
+      marDock: 2.35, terraOpen: 2.6, terraGo: 3.4, terraDur: 2, terraDock: 5.35,
+      arOpen: 5.6, arGo: 6.4, arDur: 2.2, arLand: 8.6,
+    }, (s, p) => pointOnPath(s.done, s.len, p));
+    tl.to(cargo, { autoAlpha: 0, duration: 0.3 }, 9.1).set({}, {}, 9.4);
+
+    // Teclado: focar um botão de uma faixa fora da tela leva até o capítulo dela
+    const handlers = [
+      [mar, 'mar'],
+      [terra, 'terra'],
+      [ar, 'ar'],
+    ].map(([s, label]) => {
+      const fn = () => scrollToLabel(tl, label);
+      s.el.addEventListener('focusin', fn);
+      return [s.el, fn];
+    });
+    return () => {
+      handlers.forEach(([el, fn]) => el.removeEventListener('focusin', fn));
+      ScrollTrigger.removeEventListener('refresh', redraw);
+    };
   });
+
+  // Saída para a próxima seção: a câmera se afasta. Quando o tríptico solta, ele recua
+  // (1 → 0.9) e o fundo escuro da seção aparece em volta, como um mapa visto de longe.
+  gsap.fromTo(
+    track,
+    { scale: 1 },
+    {
+      scale: 0.9,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: section,
+        start: 'bottom bottom',
+        end: 'bottom 15%',
+        scrub: true,
+        // criado depois dos pins e com prioridade menor: o fim da seção só existe depois que o
+        // pin acrescenta o espaço da jornada (antes disso o recuo começava no meio dela)
+        refreshPriority: -1,
+        // no celular a trilha está deslocada: o recuo acontece em torno da faixa visível
+        onToggle: () => gsap.set(track, { transformOrigin: `${pin.offsetWidth / 2 - gsap.getProperty(track, 'x')}px 50%` }),
+        onRefresh: () => gsap.set(track, { transformOrigin: `${pin.offsetWidth / 2 - gsap.getProperty(track, 'x')}px 50%` }),
+      },
+    },
+  );
 
   return section;
 }

@@ -58,6 +58,20 @@ export async function initMotion({ setHeaderTheme = () => {} } = {}) {
   });
   smoother.paused(true);
 
+  // A trava de segurança do <head> tira a tela de entrada sozinha em 9 s. Se ela disparar
+  // antes de a entrada terminar (celular lento, CDN lenta), a rolagem é liberada na hora:
+  // a página nunca fica visível e travada.
+  const release = () => {
+    if (!smoother.paused()) return;
+    smoother.paused(false);
+    ScrollTrigger.refresh();
+  };
+  const loadingWatch = new MutationObserver(() => {
+    if (!root.classList.contains('is-loading')) release();
+  });
+  loadingWatch.observe(root, { attributes: true, attributeFilter: ['class'] });
+  if (!root.classList.contains('is-loading')) release(); // a trava pode ter disparado antes do observador
+
   const intro = createIntro(endLoading);
 
   let heroRig = null;
@@ -92,9 +106,14 @@ export async function initMotion({ setHeaderTheme = () => {} } = {}) {
   ScrollTrigger.sort();
   ScrollTrigger.refresh();
 
-  await intro.finish(() => hero.heroEntrance(heroRig));
-  smoother.paused(false);
-  ScrollTrigger.refresh();
+  if (root.classList.contains('is-loading')) {
+    await intro.finish(() => hero.heroEntrance(heroRig));
+  } else {
+    // A trava já liberou a página: sem porta de enrolar, o hero entra direto
+    hero.heroEntrance(heroRig);
+  }
+  loadingWatch.disconnect();
+  release();
   return { smoother };
 }
 
