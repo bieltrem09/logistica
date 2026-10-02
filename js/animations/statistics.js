@@ -12,8 +12,8 @@ import { maskLines, splitInner, labelFromText } from './text.js';
 const { gsap } = window;
 
 /** Anima um número dentro de `el` até `to`. Devolve o tween (pausado se `paused`). */
-export function countUp(el, { to, decimals = 0, pad = 0, duration = 2.2, ease = 'power3.out', mode = 'auto', paused = false } = {}) {
-  const final = fmt(to, { decimals, pad });
+export function countUp(el, { to, decimals = 0, pad = 0, group = true, duration = 2.2, ease = 'power3.out', mode = 'auto', paused = false } = {}) {
+  const final = fmt(to, { decimals, pad, group });
   el.textContent = final;
   el.style.display = 'inline-block';
   el.style.minWidth = `${el.getBoundingClientRect().width}px`;
@@ -21,7 +21,7 @@ export function countUp(el, { to, decimals = 0, pad = 0, duration = 2.2, ease = 
   const o = { t: 0 };
   const render = () => {
     const v = log ? Math.pow(to + 1, o.t) - 1 : to * o.t;
-    el.textContent = fmt(o.t >= 1 ? to : decimals ? v : Math.floor(v), { decimals, pad });
+    el.textContent = fmt(o.t >= 1 ? to : decimals ? v : Math.floor(v), { decimals, pad, group });
   };
   render();
   return gsap.to(o, { t: 1, duration, ease, paused, onUpdate: render });

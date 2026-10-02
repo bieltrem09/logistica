@@ -18,7 +18,7 @@ export function initProcess() {
     const km = Number(el.textContent.replace(/\D/g, ''));
     el.setAttribute('aria-label', el.textContent.trim());
     el.innerHTML = `<span aria-hidden="true">KM </span><span aria-hidden="true"></span>`;
-    const tween = countUp(el.lastChild, { to: km, pad: 4, duration: 0.9, ease: 'power2.out', paused: true });
+    const tween = countUp(el.lastChild, { to: km, pad: 4, group: false, duration: 0.9, ease: 'power2.out', paused: true });
     tween.progress(1);
     return tween;
   });

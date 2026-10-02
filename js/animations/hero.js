@@ -15,7 +15,7 @@
  *   approachEnd →     as portas (DOM) abrem e revelam a seção 01
  *
  * Três vistas para o mesmo movimento:
- *   1. foto real recortada (assets/img/hero-container.png), se o arquivo existir
+ *   1. foto real recortada (assets/img/hero-container.webp), se o arquivo existir
  *   2. contêiner 3D (Three.js), se houver WebGL
  *   3. vetor SVG de reserva
  */
@@ -311,7 +311,7 @@ export async function setupHero(textures) {
       tagH = tag ? tag.offsetHeight : 0;
     },
     drop() {
-      driver.physics.kick(0.9, 0.35, 0.7);
+      driver.physics.kick(0.45, 0.2, 0.5); // a carga chega com um balanço curto (~6°), não um pêndulo solto
       return gsap.to(driver.state, { introOffset: 0, duration: 1.9, ease: 'power3.out' });
     },
   };

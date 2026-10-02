@@ -52,8 +52,8 @@ A sequência completa está descrita em `DIRECAO-DE-ARTE.md` (seção 4). Onde a
 | Fases do hero (espera, descida, aproximação, portas) | `HERO_PHASES` em `js/hero-rig.js` e altura do `.hero-spacer` (1,5 × hero) em `js/animations/hero.js` |
 | Antecipação (cabo tensiona, carro anda antes da carga) | `preload` / `lead` em `js/hero-rig.js` |
 | Quanto a lança desce, cede e sobe | `boomDrop`, `sag` e `lift` em `js/hero-rig.js`; tamanho em `--crane-h` (`css/style.css`) |
-| Peso do balanço (gravidade, amortecimento, quique do cabo) | constantes em `js/cable-physics.js` |
-| Quanto a rolagem rápida sacode o contêiner | `targetX` / `targetZ` em `js/hero-rig.js` |
+| Peso do balanço (gravidade, amortecimento, quique do cabo, rigidez do carro `kT`) | constantes em `js/cable-physics.js` |
+| Quanto a rolagem rápida sacode o contêiner (proporcional à largura da tela: no celular o balanço é naturalmente menor) | `targetX` / `targetZ` em `js/hero-rig.js` |
 | Rotas do navio, caminhão e avião | `ROUTES` em `js/animations/journey.js` (em px da faixa aberta) |
 | Aceleração e frenagem de cada veículo | `PROFILES` em `js/animations/journey.js` |
 | Duração da jornada | `end: vh() * 6` (desktop) e `vh() * 4.2` (celular) em `js/animations/journey.js` |
@@ -64,13 +64,15 @@ A sequência completa está descrita em `DIRECAO-DE-ARTE.md` (seção 4). Onde a
 
 | Arquivo | O que é | Pontos de encaixe |
 |---|---|---|
-| `assets/img/hero-container.webp` (1600 × 1298) | Contêiner vermelho com o moitão; céu e cabos acima do moitão removidos | `data-hook`, `data-box`, `data-cover` no `<img>` (frações da imagem) e `--hook-x` / `--hook-drop` no CSS para o cabo estático |
+| `assets/img/hero-container.webp` (1745 × 1416, resolução cheia do recorte) | Contêiner vermelho com o moitão; céu e cabos acima do moitão removidos | `data-hook`, `data-box`, `data-cover` no `<img>` (frações da imagem) e `--hook-x` / `--hook-drop` no CSS para o cabo estático |
 | `assets/img/hero-guindaste.webp` (734 × 738) | Lança girada para descer do alto à esquerda; ganchos removidos | `--crane-ax` / `--crane-ay` (saída do cabo na polia principal) |
 | `assets/img/hero-guindaste-gancho.webp` (85 × 284) | Gancho auxiliar, em camada própria que balança como pêndulo | posição e eixo em `.hero__crane-hook` |
 
 Outras fotos já no site: `sobre-patio.webp` (seção 01, 1024 × 687) e `servicos-navio.webp` (bloco azul de
 Serviços, 1024 × 617, carregada antes com prioridade baixa para não "piscar" quando o bloco desce).
-Ainda sem arquivo (rodam os fundos de reserva): `hero-sky.webp`, `modal-mar.webp`, `modal-ar.webp` e as fotos dos veículos.
+Ainda sem foto (rodam os fundos e vetores de reserva, sem nenhuma requisição 404): céu do hero, fundos MAR e AR e
+os veículos. Para usar uma foto, salve o arquivo e descomente o `<img>` indicado no comentário de cada bloco no
+`index.html` (veículos: troque o `src` de `assets/img/fallback/*.svg` pela foto).
 
 Se trocar uma foto, meça de novo os pontos de encaixe. Sem os arquivos, o hero volta sozinho ao contêiner 3D
 (ou vetor 2D) e à lança vetorial. Use somente imagens próprias ou licenciadas, sem marca-d'água.

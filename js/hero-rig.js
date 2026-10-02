@@ -123,7 +123,9 @@ export function createDriver() {
     // o contêiner só acompanha com atraso, como uma carga de verdade.
     const hold = smoothstep(0, holdEnd, p);
     const preload = 0.022 * geom.H * hold * (1 - smoothstep(holdEnd, holdEnd + 0.08, p));
-    const lead = 0.035 * geom.W * hold * (1 - el);
+    // Deriva lateral leve e sempre no mesmo sentido: descendo, o carro volta ao centro; subindo,
+    // vai para fora. Assim o lado do balanço acompanha o sentido da rolagem.
+    const lead = 0.06 * geom.W * hold * (1 - el);
     // Mouse: o operador desloca o carro do guindaste um pouco; a carga responde balançando.
     // Some quando o contêiner começa a vir para a câmera.
     const aim = state.pointer * 0.022 * geom.W * (1 - smoothstep(lowerEnd, approachEnd, p));
@@ -132,13 +134,10 @@ export function createDriver() {
     // recolhe se a lança precisar descer mais que a carga (celular)
     const py = geom.pivotY + el * geom.boomDrop;
     const Lcmd = geom.L0 + state.introOffset - preload - el * (geom.boomDrop - geom.lowerPx);
-    const targetX =
-      geom.restX +
-      lead +
-      aim +
-      Math.sin(Math.PI * el) * 0.1 * geom.W +
-      clamp(-state.velS * 0.03, -0.09 * geom.W, 0.09 * geom.W);
-    const targetZ = clamp(state.velS * 0.012, -0.06 * geom.H, 0.06 * geom.H);
+    // Rolagem rápida empurra o carro contra o sentido da rolagem: a carga fica para trás e,
+    // quando a rolagem inverte, balança para o outro lado
+    const targetX = geom.restX + lead + aim + clamp(-state.velS * 0.05, -0.05 * geom.W, 0.05 * geom.W);
+    const targetZ = clamp(state.velS * 0.01, -0.04 * geom.H, 0.04 * geom.H);
     const psiTarget = 0.38 + el * 0.5; // portas à esquerda, girando para a câmera ao descer
 
     const steps = Math.max(1, Math.ceil(dt / (1 / 240)));

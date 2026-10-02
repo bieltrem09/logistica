@@ -15,9 +15,9 @@ export const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 export const withTimeout = (promise, ms) =>
   Promise.race([promise, wait(ms).then(() => Promise.reject(new Error(`timeout ${ms}ms`)))]);
 
-/** Número no formato brasileiro (12.000 · 98,7), com zeros à esquerda opcionais. */
-export const fmt = (n, { pad = 0, decimals = 0 } = {}) => {
-  const s = Number(n).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+/** Número no formato brasileiro (12.000 · 98,7), com zeros à esquerda opcionais; `group: false` tira o ponto de milhar (KM 2140). */
+export const fmt = (n, { pad = 0, decimals = 0, group = true } = {}) => {
+  const s = Number(n).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: group });
   return pad ? s.padStart(pad, '0') : s;
 };
 

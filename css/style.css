@@ -895,7 +895,7 @@ button {
 /* Foto do contêiner: proporção própria; o cabo estático desce até o moitão da foto
    (mesmos números do data-hook do <img>: x 55,69%, y 2,77% de uma altura de 0,811 × largura) */
 .hero__cargo-img {
-  aspect-ratio: auto 1600 / 1298;
+  aspect-ratio: auto 1745 / 1416;
 }
 
 .hero__cargo:not(.is-missing) {
@@ -2537,6 +2537,15 @@ html.is-loading {
 
 html.is-loading #preloader[hidden] {
   display: block !important;
+}
+
+/* Fontes ainda chegando: conteúdo invisível atrás da porta (nada é medido nem pula).
+   Sem a porta (movimento reduzido), só o título do hero espera: é ele que quebraria em outra altura. */
+html.fonts-wait .hero__title,
+html.fonts-wait.is-loading .site-header,
+html.fonts-wait.is-loading #smooth-wrapper,
+html.fonts-wait .preloader__ui {
+  visibility: hidden;
 }
 
 #preloader {

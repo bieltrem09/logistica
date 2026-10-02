@@ -72,8 +72,9 @@ export class CablePhysics {
     this.pyVel = pyVel;
     const gEff = Math.max(0.25 * g, g - pyAcc);
 
-    // Carro do guindaste (mola crítica): sua aceleração excita o balanço
-    const kT = 48;
+    // Carro do guindaste (mola crítica): sua aceleração excita o balanço. Macio de propósito:
+    // carro de guindaste não dá tranco, e a carga pesada responde com balanço curto
+    const kT = 9;
     const cT = 2 * Math.sqrt(kT);
     const ax = kT * (targetX - this.tx) - cT * this.txV;
     this.txV += ax * dt;
@@ -104,18 +105,18 @@ export class CablePhysics {
       -(gEff / L) * Math.sin(this.theta) -
       (ax / L) * Math.cos(this.theta) -
       2 * lRate * this.omega -
-      0.4 * this.omega;
+      1.1 * this.omega; // amortecimento: assenta em ~3 s depois que a rolagem para
     this.omega += thA * dt;
-    this.theta = clamp(this.theta + this.omega * dt, -0.75, 0.75);
+    this.theta = clamp(this.theta + this.omega * dt, -0.42, 0.42);
 
     // Balanço em profundidade (aparece pela perspectiva)
     const phA =
       -(gEff / L) * Math.sin(this.phi) -
       (az / L) * Math.cos(this.phi) -
       2 * lRate * this.phiV -
-      0.5 * this.phiV;
+      1.2 * this.phiV;
     this.phiV += phA * dt;
-    this.phi = clamp(this.phi + this.phiV * dt, -0.6, 0.6);
+    this.phi = clamp(this.phi + this.phiV * dt, -0.4, 0.4);
 
     // Giro em torno do cabo, acoplado ao balanço
     const psA = -3.2 * (this.psi - psiTarget) - 1.15 * this.psiV + 0.9 * this.omega;
@@ -125,7 +126,7 @@ export class CablePhysics {
     // Atraso do contêiner abaixo do gancho
     const alA = -26 * this.alpha - 2.8 * this.alphaV - 0.35 * thA;
     this.alphaV += alA * dt;
-    this.alpha = clamp(this.alpha + this.alphaV * dt, -0.35, 0.35);
+    this.alpha = clamp(this.alpha + this.alphaV * dt, -0.18, 0.18);
 
     this.L = L;
   }
