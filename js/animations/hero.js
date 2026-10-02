@@ -20,7 +20,10 @@
 import { createDriver, HERO_PHASES } from '../hero-rig.js';
 import { q, qa, clamp, withTimeout, fmt } from './utils.js';
 
-const { gsap, ScrollTrigger } = window;
+const { gsap, ScrollTrigger, SplitText } = window;
+
+/** Pequenos laços contínuos do hero (seta "Role"): só rodam com o hero na tela. */
+const idleLoops = [];
 
 function hasWebGL() {
   try {
@@ -226,6 +229,9 @@ export async function setupHero(textures) {
     setVelocity(v) {
       driver.state.vel = v;
     },
+    setPointer(nx) {
+      gsap.to(driver.state, { pointer: nx, duration: 0.6, ease: 'power2.out', overwrite: 'auto' }); // 'auto': não mata a queda (introOffset)
+    },
     refresh() {
       driver.measure(heroEl, cargo);
       view.layout(driver.geom);
@@ -239,29 +245,94 @@ export async function setupHero(textures) {
   };
 }
 
-/** Entrada depois da porta de enrolar: título sobe, grade desce, interface chega. */
+/**
+ * Entrada cinematográfica, depois que a porta de enrolar sobe. Ordem (em segundos):
+ *   0.00  céu: a câmera assenta (1.22 → 1) e a sombra das bordas chega
+ *   0.00  grade de 12 colunas desce
+ *   0.15  título letra a letra, de dentro da máscara de cada linha
+ *   0.00  contêiner cai no cabo (física: balança e quica — js/hero-rig.js)
+ *   0.35  cabeçalho
+ *   0.55  textos secundários linha a linha (máscara), cada bloco no seu tempo
+ *   0.75  CTA gira e entra com mola; depois pulsa duas vezes
+ *   1.25  o título acusa o peso quando a carga assenta
+ *   1.50  telemetria e etiqueta técnica
+ * Os splits são desfeitos no fim: o HTML volta ao original (resize e leitores de tela).
+ */
 export function heroEntrance(hero) {
-  const tl = gsap.timeline();
+  const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+  const splits = [];
+
+  // Título: letra a letra, girando de leve a partir da base, dentro da máscara da linha
   qa('.hero__lines .line').forEach((line) => line.classList.add('is-masked'));
-  tl.from(qa('.hero__lines .line__inner'), { yPercent: 120, duration: 1.4, ease: 'expo.out', stagger: 0.1 }, 0)
-    .from(qa('.grid-overlay span'), { scaleY: 0, transformOrigin: '50% 0%', duration: 1.3, ease: 'expo.inOut', stagger: 0.03 }, 0)
-    .from('.site-header', { yPercent: -110, duration: 1, ease: 'expo.out' }, 0.35)
-    .from(qa('.hero__ui > :not(.hero__cta)'), { y: 24, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.07 }, 0.5)
-    .from('.hero__cta', { scale: 0, rotation: -140, duration: 1.1, ease: 'back.out(1.6)' }, 0.7)
+  const titleSplits = qa('.hero__lines .line__inner').map((el) => SplitText.create(el, { type: 'chars', tag: 'span', aria: 'none' }));
+  splits.push(...titleSplits);
+  const lineChars = titleSplits.map((sp) => sp.chars);
+
+  // Textos secundários: linha a linha, cada linha sobe de dentro da sua máscara
+  const secondary = qa('.hero__kicker, .hero__coords, .hero__lead').map((el) =>
+    SplitText.create(el, { type: 'lines', mask: 'lines', aria: 'none' }),
+  );
+  splits.push(...secondary);
+
+  tl.from('.hero__sky', { scale: 1.22, duration: 2.6 }, 0)
+    .from('.hero__shade', { opacity: 0, duration: 1.8, ease: 'power2.out' }, 0.1)
+    .from(qa('.grid-overlay span'), { scaleY: 0, transformOrigin: '50% 0%', duration: 1.3, ease: 'expo.inOut', stagger: 0.03 }, 0);
+  lineChars.forEach((chars, i) => {
+    tl.from(chars, { yPercent: 118, rotation: 7, transformOrigin: '0% 100%', duration: 1.35, stagger: 0.035 }, 0.15 + (i % 3) * 0.12);
+  });
+  tl.from('.site-header', { yPercent: -110, duration: 1 }, 0.35);
+  secondary.forEach((sp, i) => {
+    tl.from(sp.lines, { yPercent: 105, duration: 1, stagger: 0.07 }, 0.55 + i * 0.12);
+  });
+  tl.from('.hero__scroll', { y: 16, opacity: 0, duration: 0.8, ease: 'power3.out' }, 0.9)
+    .from('.hero__cta', { scale: 0, rotation: -140, duration: 1.1, ease: 'back.out(1.6)' }, 0.75)
+    .fromTo('.hero__cta', { '--ring': 0 }, { '--ring': 1, duration: 1.1, ease: 'power2.out', repeat: 1, repeatDelay: 0.25 }, 1.7)
+    // A carga assenta no cabo: o título acusa o peso com um pequeno solavanco
+    .to('.hero__title', { keyframes: { y: [0, 7, -2, 1, 0] }, duration: 0.5, ease: 'none' }, 1.25)
     .from(qa('.hero__tag span'), { opacity: 0, x: -10, duration: 0.5, ease: 'power2.out', stagger: 0.08 }, 1.6);
   if (hero?.hud) {
     // O alvo de pouso "acende" depois que a carga chega e assenta
     tl.fromTo(hero.hud.el, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.8, ease: 'power2.out' }, 1.5).from(
       q('.hud__target', hero.hud.el),
-      { scale: 1.25, transformOrigin: '50% 50%', duration: 0.9, ease: 'expo.out' },
+      { scale: 1.25, transformOrigin: '50% 50%', duration: 0.9 },
       1.5,
     );
   }
+  tl.add(() => splits.forEach((sp) => sp.revert()));
+
+  // Seta "Role": pulso contínuo e discreto (pausa quando o hero sai da tela)
+  const arrow = q('.hero__scroll .icon');
+  if (arrow) idleLoops.push(gsap.to(arrow, { y: 5, duration: 0.8, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: 1.8 }));
+
   if (hero) {
     hero.start();
     hero.drop();
   }
   return tl;
+}
+
+/**
+ * Mouse (só mouse/trackpad): cada camada desloca na proporção da distância.
+ *   céu (longe) pouco · título (meio) mais · guindaste: o carro acompanha e a carga balança.
+ * A telemetria não se move: o prumo precisa continuar alinhado com o contêiner.
+ */
+function initHeroPointer(heroEl, hero) {
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  const sky = q('.hero__sky', heroEl);
+  const lines = qa('.hero__lines', heroEl);
+  const skyX = gsap.quickTo(sky, 'x', { duration: 1.4, ease: 'power3.out' });
+  const skyY = gsap.quickTo(sky, 'y', { duration: 1.4, ease: 'power3.out' });
+  const titleX = gsap.quickTo(lines, 'x', { duration: 1.1, ease: 'power3.out' });
+  const titleY = gsap.quickTo(lines, 'y', { duration: 1.1, ease: 'power3.out' });
+  const move = (nx, ny) => {
+    skyX(nx * -12);
+    skyY(ny * -8);
+    titleX(nx * -24);
+    titleY(ny * -10);
+    hero.setPointer(nx);
+  };
+  heroEl.addEventListener('pointermove', (e) => move(e.clientX / window.innerWidth - 0.5, e.clientY / window.innerHeight - 0.5), { passive: true });
+  heroEl.addEventListener('pointerleave', () => move(0, 0));
 }
 
 /**
@@ -302,8 +373,8 @@ export function initHeroAnimation({ hero, setHeaderTheme }) {
     .to(q('.hero__lead', ui), { yPercent: -45, duration: lowerEnd * 0.6 }, 0)
     .to(q('.hero__scroll', ui), { yPercent: 120, duration: lowerEnd * 0.4 }, 0)
     .to('.hero__tag', { autoAlpha: 0, duration: 0.05 }, lowerEnd * 0.72)
-    // Céu (fundo): quase parado, só desce e cresce um pouco
-    .to('.hero__sky', { yPercent: 9, scale: 1.06, duration: doors }, 0)
+    // Céu (fundo): quase parado, só desce um pouco (a escala é da entrada; aqui não disputa)
+    .to('.hero__sky', { yPercent: 9, duration: doors }, 0)
     // Telemetria some quando o contêiner começa a girar para a câmera
     .to('.hero__hud', { autoAlpha: 0, duration: 0.05 }, lowerEnd + 0.02)
     .to('.hero__title', { autoAlpha: 0.12, scale: 0.9, transformOrigin: '50% 80%', duration: doors - lowerEnd }, lowerEnd)
@@ -329,8 +400,14 @@ export function initHeroAnimation({ hero, setHeaderTheme }) {
       hero.setVelocity(self.getVelocity());
       setHeaderTheme(self.progress > doors + 0.14 ? 'light' : 'dark');
     },
-    onToggle: (self) => (self.isActive ? hero.start() : hero.stop()),
+    onToggle: (self) => {
+      if (self.isActive) hero.start();
+      else hero.stop();
+      idleLoops.forEach((loop) => (self.isActive ? loop.resume() : loop.pause()));
+    },
     onRefresh: () => hero.refresh(),
   });
+
+  initHeroPointer(heroEl, hero);
 }
 

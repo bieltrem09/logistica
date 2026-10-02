@@ -22,7 +22,7 @@ export const HERO_PHASES = {
 
 export function createDriver() {
   const physics = new CablePhysics();
-  const state = { progress: 0, vel: 0, velS: 0, introOffset: 0 };
+  const state = { progress: 0, vel: 0, velS: 0, introOffset: 0, pointer: 0 };
   const geom = {};
 
   /** Mede o layout estático (offset*: ignora transformações). */
@@ -75,11 +75,15 @@ export function createDriver() {
     const hold = smoothstep(0, holdEnd, p);
     const preload = 0.022 * geom.H * hold * (1 - smoothstep(holdEnd, holdEnd + 0.08, p));
     const lead = 0.035 * geom.W * hold * (1 - el);
+    // Mouse: o operador desloca o carro do guindaste um pouco; a carga responde balançando.
+    // Some quando o contêiner começa a vir para a câmera.
+    const aim = state.pointer * 0.022 * geom.W * (1 - smoothstep(lowerEnd, approachEnd, p));
 
     const Lcmd = geom.L0 + state.introOffset - preload + el * geom.lowerPx;
     const targetX =
       geom.restX +
       lead +
+      aim +
       Math.sin(Math.PI * el) * 0.1 * geom.W +
       clamp(-state.velS * 0.03, -0.09 * geom.W, 0.09 * geom.W);
     const targetZ = clamp(state.velS * 0.012, -0.06 * geom.H, 0.06 * geom.H);

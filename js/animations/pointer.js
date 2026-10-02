@@ -1,7 +1,7 @@
 /**
  * Microinterações de ponteiro (só mouse/trackpad, nunca no toque):
- * cursor quadrado com rótulo, botões magnéticos, profundidade do hero seguindo o mouse
- * e foto do "Sobre" respondendo ao ponteiro.
+ * cursor quadrado com rótulo, botões magnéticos e foto do "Sobre" respondendo ao ponteiro.
+ * (A profundidade do hero com o mouse fica em animations/hero.js.)
  */
 import { q, qa } from './utils.js';
 
@@ -50,21 +50,6 @@ export function initPointer() {
     el.addEventListener('pointerleave', () => {
       gsap.to(el, { x: 0, y: 0, duration: 0.9, ease: 'elastic.out(1, 0.35)', overwrite: true });
     });
-  });
-
-  // Profundidade do hero: o céu anda com o mouse, a telemetria no sentido oposto
-  const hero = q('.hero');
-  const sky = q('.hero__sky');
-  const hud = q('.hero__hud');
-  const skyX = gsap.quickTo(sky, 'x', { duration: 1.2, ease: 'power3.out' });
-  const skyY = gsap.quickTo(sky, 'y', { duration: 1.2, ease: 'power3.out' });
-  const hudX = hud && gsap.quickTo(hud, 'x', { duration: 1, ease: 'power3.out' });
-  hero.addEventListener('pointermove', (e) => {
-    const nx = e.clientX / window.innerWidth - 0.5;
-    const ny = e.clientY / window.innerHeight - 0.5;
-    skyX(nx * -18);
-    skyY(ny * -10);
-    hudX?.(nx * 8);
   });
 
   // Foto do "Sobre": a imagem desliza um pouco dentro da moldura, como uma janela

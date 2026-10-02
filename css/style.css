@@ -2710,6 +2710,18 @@ html.has-3d .hero__tag::before {
   display: none;
 }
 
+/* CTA do hero: anel que pulsa depois da entrada (--ring 0 → 1, animado pelo GSAP) */
+html.has-motion .hero__cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--signal);
+  border-radius: 50%;
+  opacity: calc(1 - var(--ring, 1));
+  transform: scale(calc(1 + var(--ring, 1) * 0.55));
+  pointer-events: none;
+}
+
 /* Telemetria do guindaste: prumo, altura e alvo de pouso */
 html.has-motion .hero__hud {
   position: absolute;

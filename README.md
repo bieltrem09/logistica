@@ -25,14 +25,14 @@ js/motion.js               Orquestrador da animação: entrada, ScrollSmoother e
 js/animations/
   utils.js                 Ajudantes: perfil de velocidade (trapézio), mola, ponto na rota, formato pt-BR
   text.js                  Máscara por linha e SplitText
-  hero.js                  Hero: física, telemetria do guindaste, parallax, portas (initHeroAnimation)
+  hero.js                  Hero: entrada, física, telemetria, parallax, mouse, portas (initHeroAnimation)
   about.js                 01: manifesto ligado à rolagem + ficha lateral (initSection2/3Animation)
   journey.js               02: MAR → TERRA → AR com rotas e a carga trocando de veículo (initLogisticsJourney)
   services.js              03: guindaste baixa o contêiner azul, que vira campo (initSection5Animation)
   yard.js                  03b: carrossel do pátio com pêndulo (initContainerCarousel)
   statistics.js            04: contadores precisos (initStatistics, countUp)
   sections.js              05–08, rodapé, cabeçalhos de seção, fade-ups, encaixe dos blocos
-  pointer.js               Cursor, magnéticos, profundidade com o mouse, âncoras
+  pointer.js               Cursor, magnéticos, foto do Sobre com o mouse, âncoras
 js/hero-3d.js              Contêiner 3D do hero (Three.js)
 js/hero-rig.js             Geometria do hero + piloto que converte rolagem em comando de guindaste
 js/cable-physics.js        Física do cabo: balanço, profundidade, giro, elasticidade
