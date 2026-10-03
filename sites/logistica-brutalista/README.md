@@ -51,7 +51,7 @@ A sequência completa está descrita em `DIRECAO-DE-ARTE.md` (seção 4). Onde a
 
 | O quê | Onde |
 |---|---|
-| Fases do hero (repouso, descida, aproximação, portas) | `HERO_PHASES` em `js/hero-rig.js`; rolagem total = hero + `.hero-spacer` (2 × hero) em `js/animations/hero.js` |
+| Fases do hero (repouso, descida, aproximação, portas) | `HERO_PHASES` em `js/hero-rig.js`; hero fixado por 3 telas; o `.hero-spacer` vai até o fim das portas, então a seção 01 só sobe depois que o contêiner abriu (`js/animations/hero.js`) |
 | Peso do balanço (gravidade, amortecimento, folga das lingas, quique do cabo) | constantes em `js/cable-physics.js` |
 | Quanto o carro anda e quanto a rolagem rápida sacode o contêiner | `targetX` / `targetZ` em `js/hero-rig.js` |
 | Traçado das rotas da seção 4 (desktop e celular) | `ROUTES` em `js/animations/journey.js` (coordenadas 0–1 da faixa; cada rota termina onde a próxima começa) |
@@ -63,8 +63,10 @@ A sequência completa está descrita em `DIRECAO-DE-ARTE.md` (seção 4). Onde a
 | Velocidade de cada linha do manifesto (parallax) | `ENTER`, `LEAVE`, `DRIFT` e `SETTLE` em `js/animations/section2.js` |
 | Palavras que trocam nos títulos | atributo `data-morph="a\|b\|c"` no `index.html` (cada alternativa não pode ser mais larga que a linha mais longa do título); tempos em `js/animations/text-effects.js` |
 
-**Leveza no celular:** no toque, suavização mínima (`smoothTouch: 0.1`) — com a rolagem nativa pura
-(`smoothTouch: false`) o celular rola as seções fixas fora de sincronia e elas pulam; na roda do mouse, 0,75 s.
+**Rolagem:** suave, com leve inércia — `smooth: 1.2` (roda do mouse) e `smoothTouch: 0.2` (toque) em `js/motion.js`.
+Com a rolagem nativa pura (`smoothTouch: false`) o celular rola as seções fixas fora de sincronia e elas pulam.
+
+**Leveza no celular:**
 O carrossel de serviços só encaixa (snap) com mouse; no toque ele não briga com o embalo do dedo.
 Hero em 2D no celular/tablet (não baixa o Three.js); no computador o 3D renderiza no máximo a 1,5× de densidade;
 água dos modais em imagem pequena movida por `transform` (a camada anda só um período da textura);

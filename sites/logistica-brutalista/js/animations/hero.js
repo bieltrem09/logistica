@@ -226,14 +226,17 @@ export async function initHeroAnimation({ textures, setHeaderTheme }) {
     return null;
   }
 
-  // Duas telas de rolagem por baixo do hero fixado: a seção 01 sobe enquanto as portas abrem
+  const { holdEnd: hold, lowerEnd: lower, approachEnd: doors, doorsEnd } = HERO_PHASES;
+
+  // O hero fica fixado por três telas de rolagem. A seção 01 só começa a subir quando as
+  // portas terminam de abrir: enquanto o contêiner abre, nada embaixo se mexe, e as animações
+  // da seção 01 não rodam escondidas atrás dele (o espaçador vai até o fim das portas)
+  const pinLength = () => heroEl.offsetHeight * 3;
   const sizeSpacer = () => {
-    spacer.style.height = `${Math.round(heroEl.offsetHeight * 2)}px`;
+    spacer.style.height = `${Math.round(pinLength() * doorsEnd)}px`;
   };
   sizeSpacer();
   ScrollTrigger.addEventListener('refreshInit', sizeSpacer);
-
-  const { holdEnd: hold, lowerEnd: lower, approachEnd: doors, doorsEnd } = HERO_PHASES;
   const wide = qa('.hero__lines--wide .line');
   const stack = qa('.hero__lines--stack .line');
   const swing = doorsEnd - doors;
@@ -270,7 +273,7 @@ export async function initHeroAnimation({ textures, setHeaderTheme }) {
     .to('.hero__title', { autoAlpha: 0.12, scale: 0.9, transformOrigin: '50% 80%', duration: doors - lower }, lower)
     .to('.hero__dim', { opacity: 0.68, duration: doors - lower }, lower);
 
-  // 5 · Portas: o DOM assume exatamente onde a face 3D cobre a tela e abre para a seção 01
+  // 5 · Portas: o DOM assume exatamente onde a face 3D cobre a tela e abre; a seção 01 vem logo depois
   tl.set('.hero__doors', { visibility: 'visible' }, doors)
     .set(['.hero__sky', '.hero__shade', '.hero__dim', '.hero__title', '.hero__fx', '.hero__gl', '.hero__cargo', '.hero__ui'], { autoAlpha: 0 }, doors)
     .to('.door--left', { keyframes: doorSwing(-1), duration: swing * 0.94 }, doors + 0.01)
@@ -282,7 +285,7 @@ export async function initHeroAnimation({ textures, setHeaderTheme }) {
   ScrollTrigger.create({
     trigger: heroEl,
     start: 'top top',
-    end: () => `+=${spacer.offsetHeight + heroEl.offsetHeight}`,
+    end: () => `+=${pinLength()}`,
     pin: true,
     pinSpacing: false,
     scrub: true,

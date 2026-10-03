@@ -50,15 +50,15 @@ export async function initMotion({ setHeaderTheme = () => {} } = {}) {
   root.classList.add('has-motion');
   ScrollTrigger.config({ ignoreMobileResize: true });
 
-  // Rolagem: na roda do mouse, uma suavização curta que acompanha sem arrastar. No toque,
-  // um toque mínimo (0,1 s): a página continua no dedo, mas a rolagem passa pelo mesmo
-  // transform das seções fixas. Com a rolagem nativa pura (smoothTouch: false) o celular
-  // rola num fio e as seções fixas em outro, e elas pulam/tremem ao entrar e sair.
+  // Rolagem suave, com um leve atraso que desacelera ao parar: 1,2 s na roda do mouse e
+  // 0,2 s no toque (a página segue o dedo com um pouco de inércia). No toque a rolagem passa
+  // pelo mesmo transform das seções fixas; com a rolagem nativa pura (smoothTouch: false) o
+  // celular rola num fio e as seções fixas em outro, e elas pulam/tremem ao entrar e sair.
   const smoother = ScrollSmoother.create({
     wrapper: '#smooth-wrapper',
     content: '#smooth-content',
-    smooth: 0.75,
-    smoothTouch: 0.1,
+    smooth: 1.2,
+    smoothTouch: 0.2,
     effects: false,
   });
   smoother.paused(true);
