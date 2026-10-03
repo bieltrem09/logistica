@@ -32,6 +32,7 @@ js/animations/             Uma função por seção:
   carousel.js                initContainerCarousel  pátio: carrossel horizontal fixo
   statistics.js              initStatistics         contadores
   closing.js, global.js      processo, clientes, rastreio, contato, rodapé; cabeçalhos, cursor, âncoras
+  photos.js                  initPhotos             fotos de Números e Processo: abrem de baixo e seguem com parallax
   text-effects.js            initTitleEffects       títulos das seções: entram com desfoque (TextBlurReveal) e uma palavra troca (TextMorph)
   intro.js, utils.js         porta de enrolar de entrada; ajudantes de texto e números
 js/hero-3d.js              Contêiner 3D do hero (Three.js)
