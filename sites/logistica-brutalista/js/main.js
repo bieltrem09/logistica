@@ -9,6 +9,8 @@
  *   #smooth-wrapper > #smooth-content, <canvas id="webgl">, #preloader, #cursor
  */
 
+import { initTestimonials } from './testimonials.js';
+
 const root = document.documentElement;
 const header = document.getElementById('site-header');
 const desktopNav = window.matchMedia('(min-width: 1180px)');
@@ -193,6 +195,7 @@ initMediaFallbacks();
 const rebuildObservers = initHeader();
 initMenu();
 initTracking();
+initTestimonials();
 initYear();
 
 /* Camada de animação (GSAP + Three.js). Se falhar, o site segue no estado estático. */

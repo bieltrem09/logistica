@@ -28,7 +28,7 @@
   <!-- Fontes -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter+Tight:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 
   <link rel="preload" as="image" href="assets/img/hero-sky.webp" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="css/style.css">
@@ -767,43 +767,39 @@
             </ul>
           </div>
 
-          <!-- SUBSTITUIR pelos depoimentos reais (com autorização do cliente) -->
-          <div class="quotes wrap" data-anim="stagger">
-            <figure class="quote quote--paper">
-              <p class="quote__id micro">D-01 · Autopeças</p>
-              <blockquote class="quote__text">
-                <p>“Trocamos três transportadoras por uma. Prazo deixou de ser pauta de reunião.”</p>
-              </blockquote>
-              <figcaption class="quote__who">
-                <strong>R. Mendes</strong>
-                <span>Gerente de Supply Chain · Indústria de autopeças · Campinas/SP</span>
-              </figcaption>
-              <p class="quote__route micro">Rota Campinas → Recife · 14 carretas/semana</p>
-            </figure>
-
-            <figure class="quote quote--ink">
-              <p class="quote__id micro">D-02 · E-commerce</p>
-              <blockquote class="quote__text">
-                <p>“Black Friday com 4 mil pedidos por dia e nenhum atraso. A torre avisa antes da gente perguntar.”</p>
-              </blockquote>
-              <figcaption class="quote__who">
-                <strong>C. Araújo</strong>
-                <span>Head de Operações · E-commerce de moda · São Paulo/SP</span>
-              </figcaption>
-              <p class="quote__route micro">Last mile SP capital · D+1</p>
-            </figure>
-
-            <figure class="quote quote--blue">
-              <p class="quote__id micro">D-03 · Importação</p>
-              <blockquote class="quote__text">
-                <p>“O contêiner desce em Santos e em 48 horas está no nosso CD em Goiânia. Sem surpresa na fatura.”</p>
-              </blockquote>
-              <figcaption class="quote__who">
-                <strong>L. Ferreira</strong>
-                <span>Diretor de Importação · Distribuidora de eletrônicos · Goiânia/GO</span>
-              </figcaption>
-              <p class="quote__route micro">Santos → Goiânia · FCL 40′ HC</p>
-            </figure>
+          <!-- Depoimentos (estilo "Unique Testimonial"): troque pelos depoimentos reais, com autorização do cliente.
+               Cada cliente tem um <figure> (a fala) e um <button> (o avatar com as iniciais). -->
+          <div class="voices wrap" data-voices>
+            <div class="voices__stage">
+              <span class="voices__mark voices__mark--open" aria-hidden="true">“</span>
+              <figure class="voices__item is-active" id="voz-1" role="tabpanel" aria-labelledby="voz-tab-1">
+                <blockquote class="voices__quote"><p>Trocamos três transportadoras por uma. Prazo deixou de ser pauta de reunião.</p></blockquote>
+                <figcaption class="voices__role micro"><span class="voices__who">R. Mendes · </span>Gerente de Supply Chain · Indústria de autopeças · Campinas/SP</figcaption>
+              </figure>
+              <figure class="voices__item" id="voz-2" role="tabpanel" aria-labelledby="voz-tab-2">
+                <blockquote class="voices__quote"><p>Black Friday com 4 mil pedidos por dia e nenhum atraso. A torre avisa antes da gente perguntar.</p></blockquote>
+                <figcaption class="voices__role micro"><span class="voices__who">C. Araújo · </span>Head de Operações · E-commerce de moda · São Paulo/SP</figcaption>
+              </figure>
+              <figure class="voices__item" id="voz-3" role="tabpanel" aria-labelledby="voz-tab-3">
+                <blockquote class="voices__quote"><p>O contêiner desce em Santos e em 48 horas está no nosso CD em Goiânia. Sem surpresa na fatura.</p></blockquote>
+                <figcaption class="voices__role micro"><span class="voices__who">L. Ferreira · </span>Diretor de Importação · Distribuidora de eletrônicos · Goiânia/GO</figcaption>
+              </figure>
+              <span class="voices__mark voices__mark--close" aria-hidden="true">”</span>
+            </div>
+            <div class="voices__people" role="tablist" aria-label="Depoimentos de clientes">
+              <button class="voice voice--signal is-active" type="button" role="tab" id="voz-tab-1" aria-controls="voz-1" aria-selected="true">
+                <span class="voice__avatar" aria-hidden="true">RM</span>
+                <span class="voice__name"><span>R. Mendes</span></span>
+              </button>
+              <button class="voice voice--blue" type="button" role="tab" id="voz-tab-2" aria-controls="voz-2" aria-selected="false" tabindex="-1">
+                <span class="voice__avatar" aria-hidden="true">CA</span>
+                <span class="voice__name"><span>C. Araújo</span></span>
+              </button>
+              <button class="voice voice--paper" type="button" role="tab" id="voz-tab-3" aria-controls="voz-3" aria-selected="false" tabindex="-1">
+                <span class="voice__avatar" aria-hidden="true">LF</span>
+                <span class="voice__name"><span>L. Ferreira</span></span>
+              </button>
+            </div>
           </div>
         </section>
 

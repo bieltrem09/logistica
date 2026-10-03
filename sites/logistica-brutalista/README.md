@@ -21,10 +21,11 @@ Abra o endereço exibido. Um servidor é necessário porque `js/main.js` é um E
 index.html                 Página: entrada + hero em 4 camadas + 8 seções + rodapé
 css/style.css              Tokens, temas por seção, layout mobile-first; seção 19 = estados com animação
 js/main.js                 Cabeçalho que inverte a cor, menu em tela cheia, fallback de imagens, rastreio
+js/testimonials.js         Depoimentos: uma fala por vez, troca com desfoque, avatares em abas (funciona sem animação)
 js/motion.js               Orquestrador da animação: liga GSAP e chama um módulo por seção
 js/animations/             Uma função por seção:
   hero.js                    initHeroAnimation      contêiner no guindaste, linhas de rota, portas
-  section2.js                initSection2Animation  manifesto palavra a palavra (scrub)
+  section2.js                initSection2Animation  manifesto em parallax: cada linha numa velocidade, monta no meio da tela
   section3.js                initSection3Animation  texto, ficha técnica e foto do "Sobre"
   journey.js                 initLogisticsJourney   MAR → TERRA → AR com rota desenhada
   section5.js                initSection5Animation  o azul nasce do ● e corta "SERVIÇOS"
@@ -56,6 +57,7 @@ A sequência completa está descrita em `DIRECAO-DE-ARTE.md` (seção 4). Onde a
 | Duração da jornada e de cada veículo | `initLogisticsJourney()` (`end: vh() * 7.5` no desktop, `5.4` no celular) |
 | Forma e tempo do azul da seção 5 | `initSection5Animation()` (`DOT`, `start`/`end` do ScrollTrigger) |
 | Transição do carrossel e encaixe | `focus()` e `snap` em `js/animations/carousel.js` |
+| Velocidade de cada linha do manifesto (parallax) | `ENTER`, `LEAVE`, `DRIFT` e `SETTLE` em `js/animations/section2.js` |
 | Palavras que trocam nos títulos | atributo `data-morph="a\|b\|c"` no `index.html` (cada alternativa não pode ser mais larga que a linha mais longa do título); tempos em `js/animations/text-effects.js` |
 
 **Robustez:** a tela de entrada some sozinha em 9 s se algo falhar. Sem WebGL, o mesmo movimento roda no vetor 2D.

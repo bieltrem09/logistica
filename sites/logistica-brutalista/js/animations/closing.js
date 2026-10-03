@@ -83,15 +83,11 @@ export function initClients() {
     },
   });
 
-  gsap.from(qa('.quote'), {
-    y: 140,
-    rotation: (i) => [-5, 4, -3][i % 3],
-    opacity: 0,
-    duration: 1.2,
-    ease: 'back.out(1.3)',
-    stagger: 0.16,
-    scrollTrigger: { trigger: '.quotes', start: 'top 84%', once: true },
-  });
+  // Depoimentos: a fala chega desfocada e assenta; os avatares vêm em seguida, um a um
+  gsap
+    .timeline({ scrollTrigger: { trigger: '.voices', start: 'top 82%', once: true } })
+    .from('.voices__stage', { y: 40, opacity: 0, filter: 'blur(8px)', duration: 0.9, ease: 'power3.out', clearProps: 'filter' })
+    .from(qa('.voice'), { y: 16, opacity: 0, duration: 0.5, ease: 'power3.out', stagger: 0.08 }, 0.35);
 }
 
 export function initTracking() {
