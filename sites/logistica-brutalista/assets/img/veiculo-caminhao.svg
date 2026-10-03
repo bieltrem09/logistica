@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 780" width="130" height="780">
+  <title>Caminhão com carreta visto de cima</title>
+  <defs>
+    <linearGradient id="lado" x1="0" x2="1">
+      <stop offset="0" stop-color="#a9b2ba"/>
+      <stop offset=".16" stop-color="#e2e6e9"/>
+      <stop offset=".5" stop-color="#f5f7f8"/>
+      <stop offset=".84" stop-color="#dfe3e7"/>
+      <stop offset="1" stop-color="#9fa8b0"/>
+    </linearGradient>
+    <pattern id="teto" width="118" height="14" patternUnits="userSpaceOnUse">
+      <rect width="118" height="14" fill="url(#lado)"/>
+      <rect y="12" width="118" height="1.4" fill="#0c0c0c" opacity=".09"/>
+    </pattern>
+    <linearGradient id="vidro" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#24323c"/>
+      <stop offset="1" stop-color="#3f5260"/>
+    </linearGradient>
+  </defs>
+  <!-- carreta -->
+  <rect x="6" y="4" width="118" height="600" rx="3" fill="url(#teto)"/>
+  <rect x="6" y="4" width="118" height="600" rx="3" fill="none" stroke="#0c0c0c" stroke-opacity=".22" stroke-width="2"/>
+  <rect x="6" y="4" width="118" height="10" fill="#8d969e"/>
+  <rect x="6" y="594" width="118" height="10" fill="#8d969e"/>
+  <!-- engate -->
+  <rect x="52" y="604" width="26" height="22" fill="#1d2329"/>
+  <!-- cabine -->
+  <path d="M14 626h102c6 0 10 4 10 10v118c0 13-10 22-22 22H26c-12 0-22-9-22-22V636c0-6 4-10 10-10Z" fill="url(#lado)"/>
+  <path d="M14 626h102c6 0 10 4 10 10v118c0 13-10 22-22 22H26c-12 0-22-9-22-22V636c0-6 4-10 10-10Z" fill="none" stroke="#0c0c0c" stroke-opacity=".25" stroke-width="2"/>
+  <rect x="22" y="640" width="86" height="64" rx="6" fill="#ffffff" opacity=".75"/>
+  <rect x="16" y="716" width="98" height="30" rx="6" fill="url(#vidro)"/>
+  <rect x="34" y="756" width="62" height="6" rx="3" fill="#c7cdd2"/>
+  <!-- retrovisores -->
+  <rect x="0" y="720" width="8" height="16" rx="2" fill="#2a3036"/>
+  <rect x="122" y="720" width="8" height="16" rx="2" fill="#2a3036"/>
+</svg>

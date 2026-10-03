@@ -372,11 +372,11 @@
             </div>
 
             <figure class="about__figure" data-anim="reveal-img">
-              <div class="about__media media media--photo" data-label="sobre-patio.webp · 1600×1067">
-                <img src="assets/img/sobre-patio.webp" width="1600" height="1067" loading="lazy" decoding="async" alt="Equipe da VETOR, de capacete e colete, caminhando entre pilhas de contêineres no pátio" data-anim="parallax" data-speed="0.92">
+              <div class="about__media media media--photo" data-label="sobre-navio.webp · 1024×576">
+                <img src="assets/img/sobre-navio.webp" width="1024" height="576" loading="lazy" decoding="async" alt="Navio porta-contêineres carregado, de casco preto e vermelho, navegando em direção ao porto" data-anim="parallax" data-speed="0.92">
               </div>
               <figcaption class="about__caption micro">
-                <span>Fig. 01</span><span>Pátio próprio · Santos/SP</span><span>Operação 24/7</span>
+                <span>Fig. 01</span><span>Longo curso · Santos/SP</span><span>Operação 24/7</span>
               </figcaption>
             </figure>
           </div>
@@ -397,17 +397,16 @@
             </h2>
           </div>
 
-          <!-- Pronto para pin + scroll horizontal -->
+          <!-- Três faixas no estilo "vista aérea": mar, estrada sobre a água e mar aberto; os veículos
+               seguem a mesma linha horizontal (--lane) de uma faixa para a outra. -->
           <div class="modais__pin" data-anim="pin">
             <div class="modais__track" data-anim="horizontal">
 
               <article class="modal-strip modal-strip--mar" data-theme="blue" aria-labelledby="modal-mar">
-                <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9">
-                  <img src="assets/img/modal-mar.webp" width="1200" height="2000" alt="" loading="lazy" decoding="async">
-                </div>
+                <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9"></div>
                 <div class="modal-strip__vehicle modal-strip__vehicle--ship" data-anim="parallax" data-speed="1.08">
                   <span class="vehicle__wake" aria-hidden="true"></span>
-                  <img src="assets/img/veiculo-navio.png" data-fallback="assets/img/fallback/navio.svg" width="260" height="1100" alt="" loading="lazy" decoding="async">
+                  <img src="assets/img/veiculo-navio.webp" width="115" height="665" alt="" loading="lazy" decoding="async">
                 </div>
                 <p class="modal-strip__tab" aria-hidden="true">01 · Mar</p>
                 <p class="modal-strip__tel micro" aria-hidden="true"><span>Velocidade <b data-tel="speed" data-max="18">00</b> nós</span><span>Percorrido <b data-tel="dist" data-max="412">000</b> mn</span></p>
@@ -427,10 +426,10 @@
 
               <article class="modal-strip modal-strip--terra" data-theme="dark" aria-labelledby="modal-terra">
                 <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9">
-                  <img src="assets/img/modal-terra.webp" width="1125" height="2000" alt="" loading="lazy" decoding="async">
+                  <span class="modal-strip__road" aria-hidden="true"></span>
                 </div>
                 <div class="modal-strip__vehicle modal-strip__vehicle--truck" data-anim="parallax" data-speed="1.12">
-                  <img src="assets/img/veiculo-caminhao.png" data-fallback="assets/img/fallback/caminhao.svg" width="130" height="780" alt="" loading="lazy" decoding="async">
+                  <img src="assets/img/veiculo-caminhao.svg" width="130" height="780" alt="" loading="lazy" decoding="async">
                 </div>
                 <p class="modal-strip__tab" aria-hidden="true">02 · Terra</p>
                 <p class="modal-strip__tel micro" aria-hidden="true"><span>Velocidade <b data-tel="speed" data-max="80">00</b> km/h</span><span>Percorrido <b data-tel="dist" data-max="1240">0000</b> km</span></p>
@@ -448,13 +447,11 @@
                 </div>
               </article>
 
-              <article class="modal-strip modal-strip--ar" data-theme="light" aria-labelledby="modal-ar">
-                <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9">
-                  <img src="assets/img/modal-ar.webp" width="1200" height="2000" alt="" loading="lazy" decoding="async">
-                </div>
+              <article class="modal-strip modal-strip--ar" data-theme="blue" aria-labelledby="modal-ar">
+                <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9"></div>
                 <span class="modal-strip__clouds" aria-hidden="true"></span>
                 <div class="modal-strip__vehicle modal-strip__vehicle--plane" data-anim="parallax" data-speed="1.2">
-                  <img src="assets/img/veiculo-aviao.png" data-fallback="assets/img/fallback/aviao.svg" width="800" height="800" alt="" loading="lazy" decoding="async">
+                  <img src="assets/img/veiculo-aviao.svg" width="800" height="800" alt="" loading="lazy" decoding="async">
                 </div>
                 <p class="modal-strip__tab" aria-hidden="true">03 · Ar</p>
                 <p class="modal-strip__tel micro" aria-hidden="true"><span>Velocidade <b data-tel="speed" data-max="850">000</b> km/h</span><span>Altitude <b data-tel="dist" data-max="10000">00000</b> m</span></p>

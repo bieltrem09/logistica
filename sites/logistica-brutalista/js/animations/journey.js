@@ -3,13 +3,13 @@
  *
  * O usuário acompanha a MESMA carga do hero (o contêiner laranja VTRU 204816-3):
  *   entrada   → o mapa se desenha: rota planejada, porto, terminal e destino ●
- *   mar       → o navio segue a rota curva (balanço de água), a rota feita fica laranja
+ *   mar       → o navio segue a linha (balanço de água), a rota feita fica laranja
  *   transbordo→ o navio para no porto, a carga passa para o caminhão, a câmera segue a rota
- *   terra     → o caminhão acelera, faz as curvas com suspensão e chega ao terminal
+ *   terra     → o caminhão acelera pela estrada sobre a água e chega ao terminal
  *   embarque  → terra → ar: o caminhão sai, o avião assume
  *   ar        → o avião acelera, sobe (sombra se afasta) e chega ao destino ●
- *   final     → a câmera se afasta: o mapa inteiro, a rota completa e o ● azul,
- *               que vira o bloco azul da seção 5
+ *   final     → a câmera se afasta: as três faixas lado a lado, com navio, caminhão e
+ *               avião na mesma linha (o quadro da vista aérea) e o ● azul no destino
  * Um veículo por vez. Tudo comandado pela rolagem (scrub), só com transform/opacity:
  * cada veículo anda num "trilho" do tamanho da faixa, deslocado por translate em %
  * (porcentagem do próprio trilho = da faixa), então acompanha a faixa abrindo e fechando.
@@ -21,39 +21,15 @@ const { gsap, ScrollTrigger } = window;
 const CARGO_ID = 'VTRU 204816-3';
 
 /*
- * Rotas em coordenadas da faixa (0–1). Cada rota termina na mesma altura em que a
- * próxima começa, então a linha atravessa as divisões sem quebrar.
- * Desktop: desenhadas para a faixa aberta (74%). Celular: a faixa ocupa a tela.
+ * Rotas em coordenadas da faixa (0–1): uma linha reta na mesma altura (LANE) nas três
+ * faixas, como na vista aérea — o navio chega ao porto na borda da faixa, o caminhão
+ * atravessa a estrada e o avião segue até o destino ●. A mesma altura está no CSS (--lane).
  */
+const LANE = 0.45;
+const line = (x0, x1) => [[[x0, LANE], [x0 + (x1 - x0) / 3, LANE], [x0 + ((x1 - x0) * 2) / 3, LANE], [x1, LANE]]];
 const ROUTES = {
-  desktop: {
-    mar: [
-      [[0.74, 1.1], [0.73, 0.86], [0.58, 0.7], [0.66, 0.55]],
-      [[0.66, 0.55], [0.73, 0.42], [0.86, 0.37], [1, 0.36]],
-    ],
-    terra: [
-      [[0, 0.36], [0.24, 0.36], [0.36, 0.3], [0.56, 0.32]],
-      [[0.56, 0.32], [0.76, 0.34], [0.8, 0.5], [1, 0.5]],
-    ],
-    ar: [
-      [[0, 0.5], [0.24, 0.5], [0.42, 0.5], [0.56, 0.42]],
-      [[0.56, 0.42], [0.68, 0.35], [0.74, 0.28], [0.82, 0.26]],
-    ],
-  },
-  mobile: {
-    mar: [
-      [[-0.2, 0.52], [0.22, 0.52], [0.44, 0.48], [0.6, 0.41]],
-      [[0.6, 0.41], [0.72, 0.36], [0.86, 0.35], [1, 0.35]],
-    ],
-    terra: [
-      [[0, 0.35], [0.3, 0.35], [0.34, 0.5], [0.6, 0.5]],
-      [[0.6, 0.5], [0.82, 0.5], [0.84, 0.46], [1, 0.46]],
-    ],
-    ar: [
-      [[0, 0.46], [0.3, 0.46], [0.44, 0.4], [0.58, 0.32]],
-      [[0.58, 0.32], [0.68, 0.27], [0.76, 0.24], [0.84, 0.23]],
-    ],
-  },
+  desktop: { mar: line(-0.12, 1), terra: line(0, 1), ar: line(0, 0.86) },
+  mobile: { mar: line(-0.2, 1), terra: line(0, 1), ar: line(0, 0.84) },
 };
 
 /** Para onde a imagem de cada veículo aponta (graus de tela; 0 = leste, 90 = sul). */
@@ -189,7 +165,6 @@ export function initLogisticsJourney({ smoother }) {
       kind: { mar: 'ship', terra: 'truck', ar: 'plane' }[key],
       status: STATUS[key],
       bg: q('.modal-strip__bg', el),
-      bgImg: q('.modal-strip__bg img', el),
       body: q('.modal-strip__body', el),
       top: q('.modal-strip__top', el),
       tab: q('.modal-strip__tab', el),
@@ -266,7 +241,8 @@ export function initLogisticsJourney({ smoother }) {
       // Etiqueta da carga logo acima do veículo, qualquer que seja a direção
       const r = (rot * Math.PI) / 180;
       const ext = (Math.abs(s.size.w * Math.sin(r)) + Math.abs(s.size.h * Math.cos(r))) / 2;
-      layer.tag.style.setProperty('--ty', `${Math.round(-ext * (s.kind === 'plane' ? 1.05 : 1) - 12)}px`);
+      // (avião: as asas são enflechadas, a ponta fica para trás; sobre o centro há espaço mais perto)
+      layer.tag.style.setProperty('--ty', `${Math.round(-ext * (s.kind === 'plane' ? 0.8 : 1) - 12)}px`);
       // ...e sem sair da faixa nas bordas
       const half = s.size.tag / 2 + 10;
       const cx = p.x * s.size.strip;
@@ -368,8 +344,7 @@ export function initLogisticsJourney({ smoother }) {
       .to(mar.tel, { opacity: 1, duration: 0.3 }, 2.1)
       .to([mar.veh, mar.layer.tag], { autoAlpha: 1, duration: 0.05 }, 2.4)
       .to(mar, { t: 0.9, duration: 2.8, ease: 'power1.inOut' }, 2.4)
-      .to(mar.bg, { '--bgy': '640px', duration: 3.6 }, 1.6)
-      .fromTo(mar.bgImg, { yPercent: -8 }, { yPercent: 8, duration: 3.6 }, 1.6);
+      .to(mar.bg, { '--bgx': '-640px', duration: 3.6 }, 1.6);
 
     // TRANSBORDO — a carga sai do navio e continua por terra
     tl.addLabel('transbordo', 5.2)
@@ -392,11 +367,10 @@ export function initLogisticsJourney({ smoother }) {
       .to(terra.veh, { autoAlpha: 1, duration: 0.3 }, 5.6)
       .to(terra.layer.tag, { autoAlpha: 1, duration: 0.2 }, 6.3);
 
-    // TERRA — o caminhão acelera, faz as curvas e chega ao terminal
+    // TERRA — o caminhão acelera pela estrada e chega ao terminal
     tl.addLabel('terra', 6.3)
       .to(terra, { t: 0.92, duration: 2.7, ease: 'power2.inOut' }, 6.3)
-      .to(terra.bg, { '--bgy': '-1400px', duration: 3.6 }, 5.4)
-      .fromTo(terra.bgImg, { yPercent: 8 }, { yPercent: -8, duration: 3.6 }, 5.4);
+      .to(terra.bg, { '--bgx': '-1400px', duration: 3.6 }, 5.4);
 
     // EMBARQUE — terra → ar
     tl.addLabel('embarque', 9)
@@ -422,14 +396,12 @@ export function initLogisticsJourney({ smoother }) {
     // AR — o avião decola, sobe e chega ao destino ●
     tl.addLabel('ar', 10.1)
       .to(ar, { t: 1, duration: 2.8, ease: 'power2.inOut' }, 10.1)
-      .fromTo(ar.clouds, { yPercent: -10 }, { yPercent: 24, duration: 3.4 }, 9.7)
-      .to(ar.bg, { '--bgx': '300px', '--bgy': '480px', duration: 3.6 }, 9.2)
-      .fromTo(ar.bgImg, { yPercent: -8 }, { yPercent: 8, duration: 3.6 }, 9.2);
+      .fromTo(ar.clouds, { xPercent: 12 }, { xPercent: -20, duration: 3.4 }, 9.7)
+      .to(ar.bg, { '--bgx': '-600px', duration: 3.6 }, 9.2);
 
     // CHEGADA + FINAL — a câmera se afasta: o mapa inteiro com a rota completa
     tl.addLabel('final', 12.9)
-      .to(ar.veh, { autoAlpha: 0, duration: 0.45, ease: 'power2.in' }, 12.9)
-      .to(ar, { k: 0.35, duration: 0.45, ease: 'power2.in' }, 12.9)
+      .to(ar, { k: 0.9, duration: 0.45, ease: 'power2.inOut' }, 12.9)
       .to(ar.layer.tag, { autoAlpha: 0, duration: 0.2 }, 12.9)
       .to(ar.layer.dot, { scale: 2.1, duration: 0.35, ease: 'power2.out' }, 13.1)
       .to(ar.layer.dot, { scale: 1.4, duration: 0.4, ease: 'power2.inOut' }, 13.45);
@@ -439,8 +411,8 @@ export function initLogisticsJourney({ smoother }) {
       .to(ar.clouds, { opacity: 0, duration: 0.4 }, 13.3)
       .to(strips.flatMap((s) => [s.body, s.top]), { opacity: 1, duration: 0.4 }, 13.7)
       .to(strips.flatMap((s) => [s.layer.svg, s.layer.label]), { opacity: 1, duration: 0.4 }, 13.5)
-      .to([mar.veh, terra.veh], { autoAlpha: 0.55, duration: 0.5 }, 13.7)
-      .to([mar, terra], { k: 0.8, duration: 0.5 }, 13.7)
+      .to([mar.veh, terra.veh], { autoAlpha: 1, duration: 0.5 }, 13.7)
+      .to([mar, terra], { k: 0.9, duration: 0.5 }, 13.7)
       .to(track, { scale: 0.92, duration: 1.1, ease: 'power2.inOut' }, 13.4)
       .set({}, {}, 15);
 
@@ -501,7 +473,7 @@ export function initLogisticsJourney({ smoother }) {
     tl.to(strips.map((s) => s.tel), { opacity: 1, duration: 0.3 }, 0.3)
       .to([mar.veh, mar.layer.tag], { autoAlpha: 1, duration: 0.05 }, 0.7)
       .to(mar, { t: 1, duration: 2.2, ease: 'power1.inOut' }, 0.7)
-      .to(mar.bg, { '--bgy': '600px', duration: 3 }, 0)
+      .to(mar.bg, { '--bgx': '-600px', duration: 3 }, 0)
       .to(mar.cargo, { scale: 1.5, autoAlpha: 0, duration: 0.3 }, 2.9)
       .to([mar.veh, mar.layer.tag], { autoAlpha: 0, duration: 0.3 }, 3);
 
@@ -510,8 +482,7 @@ export function initLogisticsJourney({ smoother }) {
     tl.fromTo(terra.cargo, { scale: 1.5, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.3 }, 3.5)
       .to([terra.veh, terra.layer.tag], { autoAlpha: 1, duration: 0.05 }, 3.4)
       .to(terra, { t: 1, duration: 2.2, ease: 'power2.inOut' }, 3.8)
-      .to(terra.bg, { '--bgy': '-1200px', duration: 3 }, 3)
-      .fromTo(terra.bgImg, { yPercent: 8 }, { yPercent: -8, duration: 3 }, 3)
+      .to(terra.bg, { '--bgx': '-1200px', duration: 3 }, 3)
       .to([terra.veh, terra.layer.tag], { autoAlpha: 0, duration: 0.3 }, 6);
 
     tl.addLabel('ar', 6);
@@ -519,7 +490,7 @@ export function initLogisticsJourney({ smoother }) {
     tl.to(ar.clouds, { opacity: 0.85, duration: 0.4 }, 6.3)
       .to([ar.veh, ar.layer.tag], { autoAlpha: 1, duration: 0.05 }, 6.4)
       .to(ar, { t: 1, duration: 2.2, ease: 'power2.inOut' }, 6.8)
-      .fromTo(ar.clouds, { yPercent: -10 }, { yPercent: 24, duration: 3 }, 6.3)
+      .fromTo(ar.clouds, { xPercent: 12 }, { xPercent: -20, duration: 3 }, 6.3)
       .to([ar.veh, ar.layer.tag], { autoAlpha: 0, duration: 0.3 }, 9)
       .to(ar.layer.dot, { scale: 2, duration: 0.35, ease: 'power2.out' }, 9.1)
       .to(ar.layer.dot, { scale: 1.4, duration: 0.35 }, 9.45)

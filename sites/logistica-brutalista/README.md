@@ -27,7 +27,7 @@ js/animations/             Uma função por seção:
   hero.js                    initHeroAnimation      contêiner no guindaste, linhas de rota, portas
   section2.js                initSection2Animation  manifesto em parallax: cada linha numa velocidade, monta no meio da tela
   section3.js                initSection3Animation  texto, ficha técnica e foto do "Sobre"
-  journey.js                 initLogisticsJourney   MAR → TERRA → AR com rota desenhada
+  journey.js                 initLogisticsJourney   MAR → TERRA → AR em vista aérea: água, estrada e os três veículos na mesma linha
   section5.js                initSection5Animation  o azul nasce do ● e corta "SERVIÇOS"
   carousel.js                initContainerCarousel  pátio: carrossel horizontal fixo
   statistics.js              initStatistics         contadores
@@ -57,6 +57,8 @@ A sequência completa está descrita em `DIRECAO-DE-ARTE.md` (seção 4). Onde a
 | Duração da jornada e de cada veículo | `initLogisticsJourney()` (`end: vh() * 7.5` no desktop, `5.4` no celular) |
 | Forma e tempo do azul da seção 5 | `initSection5Animation()` (`DOT`, `start`/`end` do ScrollTrigger) |
 | Transição do carrossel e encaixe | `focus()` e `snap` em `js/animations/carousel.js` |
+| Altura da linha dos veículos na seção de modais | `--lane` em `.modais__pin` (CSS) e `LANE` em `js/animations/journey.js` (os dois iguais) |
+| Cores e textura da água das faixas | gradientes em `.modal-strip--mar/terra/ar .modal-strip__bg` + `assets/img/agua-*.svg` (ruído em SVG, misturado por overlay) |
 | Velocidade de cada linha do manifesto (parallax) | `ENTER`, `LEAVE`, `DRIFT` e `SETTLE` em `js/animations/section2.js` |
 | Palavras que trocam nos títulos | atributo `data-morph="a\|b\|c"` no `index.html` (cada alternativa não pode ser mais larga que a linha mais longa do título); tempos em `js/animations/text-effects.js` |
 

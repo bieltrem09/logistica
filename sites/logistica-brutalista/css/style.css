@@ -1184,6 +1184,7 @@ button {
 }
 
 .modais__pin {
+  --lane: 0.45; /* altura da linha que os três veículos seguem (mesma do js/animations/journey.js) */
   position: relative;
   height: 100svh;
   min-height: 600px;
@@ -1223,7 +1224,7 @@ button {
   z-index: 4;
   width: 1px;
   background: var(--paper);
-  opacity: 0.85;
+  opacity: 0.35;
 }
 
 .modal-strip__bg {
@@ -1240,54 +1241,67 @@ button {
   pointer-events: none;
 }
 
-/* Fundos de reserva desenhados em CSS: mar, asfalto, espaço aéreo */
+/* Vista aérea: três águas (cores medidas na referência) com textura de ondas em SVG
+   (assets/img/agua-*.svg) misturada por overlay. A faixa do meio tem a estrada. */
+.modal-strip__bg {
+  background-size: 240px 240px, 520px 520px, 100% 100%;
+  background-blend-mode: overlay, overlay, normal;
+}
+
 .modal-strip--mar .modal-strip__bg {
-  --media-bg: var(--sea);
+  --media-bg: #044D87;
   background-image:
-    repeating-linear-gradient(-14deg, rgba(247, 247, 247, 0.05) 0 2px, transparent 2px 28px),
-    radial-gradient(80% 60% at 30% 30%, rgba(28, 88, 215, 0.55), transparent 70%);
+    url("../assets/img/agua-fina.svg"),
+    url("../assets/img/agua-ondas.svg"),
+    radial-gradient(120% 90% at 45% 35%, #065491, #044D87 60%, #03467C);
 }
 
 .modal-strip--mar .modal-strip__bg::after {
-  background: linear-gradient(0deg, rgba(8, 22, 56, 0.85) 0%, rgba(8, 22, 56, 0) 55%);
+  background: linear-gradient(0deg, rgba(2, 30, 60, 0.85) 0%, rgba(2, 30, 60, 0) 55%);
 }
 
 .modal-strip--terra .modal-strip__bg {
-  --media-bg: var(--asphalt);
-}
-
-.modal-strip--terra .modal-strip__bg.is-missing::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background:
-    repeating-linear-gradient(180deg, rgba(237, 232, 223, 0.8) 0 64px, transparent 64px 128px) 50% 0 / 5px 100% no-repeat,
-    linear-gradient(rgba(237, 232, 223, 0.55), rgba(237, 232, 223, 0.55)) 30% 0 / 3px 100% no-repeat,
-    linear-gradient(rgba(237, 232, 223, 0.55), rgba(237, 232, 223, 0.55)) 70% 0 / 3px 100% no-repeat,
-    linear-gradient(90deg, #262728 0 30%, #1D1E1F 30% 70%, #262728 70%);
+  --media-bg: #0B2938;
+  background-image:
+    url("../assets/img/agua-fina-densa.svg"),
+    url("../assets/img/agua-ondas-densa.svg"),
+    radial-gradient(120% 90% at 50% 35%, #0E3040, #0B2938 60%, #09232F);
+  background-size: 240px 240px, 300px 300px, 100% 100%;
 }
 
 .modal-strip--terra .modal-strip__bg::after {
   background:
-    linear-gradient(180deg, rgba(12, 12, 12, 0.7) 0%, rgba(12, 12, 12, 0) 28%),
-    linear-gradient(0deg, rgba(12, 12, 12, 0.9) 0%, rgba(12, 12, 12, 0.35) 45%, rgba(12, 12, 12, 0) 62%);
+    linear-gradient(180deg, rgba(5, 18, 24, 0.7) 0%, rgba(5, 18, 24, 0) 26%),
+    linear-gradient(0deg, rgba(5, 18, 24, 0.9) 0%, rgba(5, 18, 24, 0.35) 45%, rgba(5, 18, 24, 0) 60%);
+}
+
+/* Estrada sobre a água, na linha dos veículos: faixas tracejadas, bordas e sombra de ponte */
+.modal-strip__road {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  top: calc(var(--lane) * 100%);
+  height: clamp(64px, 14%, 132px);
+  translate: 0 -50%;
+  background:
+    repeating-linear-gradient(90deg, rgba(217, 227, 234, 0.6) 0 46px, transparent 46px 86px) var(--bgx, 0px) 50% / 100% 4px no-repeat,
+    linear-gradient(rgba(217, 227, 234, 0.55), rgba(217, 227, 234, 0.55)) 0 12% / 100% 2px no-repeat,
+    linear-gradient(rgba(217, 227, 234, 0.55), rgba(217, 227, 234, 0.55)) 0 88% / 100% 2px no-repeat,
+    linear-gradient(180deg, #2A4D62, #234559 50%, #1E3F52);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.5), 0 -2px 0 rgba(255, 255, 255, 0.07);
 }
 
 .modal-strip--ar .modal-strip__bg {
-  --media-bg: #B3BAC0;
+  --media-bg: #043F56;
   background-image:
-    linear-gradient(rgba(12, 12, 12, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(12, 12, 12, 0.07) 1px, transparent 1px);
-  background-size: 56px 56px;
+    url("../assets/img/agua-fina.svg"),
+    url("../assets/img/agua-ondas.svg"),
+    radial-gradient(120% 90% at 55% 35%, #054660, #043F56 60%, #03384C);
 }
 
 .modal-strip--ar .modal-strip__bg::after {
-  background: linear-gradient(0deg, rgba(237, 232, 223, 0.9) 0%, rgba(237, 232, 223, 0) 55%);
-}
-
-.modal-strip--ar .modal-strip__bg > img {
-  filter: saturate(0.8) contrast(1.02);
+  background: linear-gradient(0deg, rgba(2, 30, 42, 0.88) 0%, rgba(2, 30, 42, 0) 55%);
 }
 
 /* Veículos vistos de cima, atravessando as divisões */
@@ -1341,27 +1355,28 @@ button {
   display: none;
 }
 
+/* Parados (sem animação): os três na mesma linha, apontando para a direita, como na vista aérea */
 .modal-strip__vehicle--ship {
-  --ar: 260 / 1100;
-  --vx: 94%;
-  --vy: 40%;
+  --ar: 115 / 665;
+  --vx: 70%;
+  --vy: calc(var(--lane) * 100%);
   --vh: 34svh;
-  --rot: 22deg;
+  --rot: 90deg;
 }
 
 .modal-strip__vehicle--truck {
   --ar: 130 / 780;
-  --vx: 50%;
-  --vy: 38%;
+  --vx: 52%;
+  --vy: calc(var(--lane) * 100%);
   --vh: 30svh;
-  --rot: 0deg;
+  --rot: -90deg;
 }
 
 .modal-strip__vehicle--plane {
-  --vx: 30%;
-  --vy: 38%;
+  --vx: 46%;
+  --vy: calc(var(--lane) * 100%);
   --vh: 34svh;
-  --rot: -38deg;
+  --rot: 90deg;
 }
 
 .modal-strip__top {
@@ -1433,25 +1448,22 @@ button {
   }
 
   .modal-strip__vehicle--ship {
-    --vx: 100%;
-    --vy: 45%;
+    --vx: 62%;
     --vh: min(40svh, 30vw);
   }
 
   .modal-strip__vehicle--truck {
     --vx: 50%;
-    --vy: 40%;
     --vh: min(34svh, 25vw);
   }
 
   .modal-strip__vehicle--plane {
-    --vx: 18%;
-    --vy: 35%;
-    --vh: min(44svh, 32vw);
+    --vx: 52%;
+    --vh: min(34svh, 25vw);
   }
 
   html.has-motion .modal-strip__vehicle--plane {
-    --vh: min(36svh, 27vw);
+    --vh: min(30svh, 22vw);
   }
 }
 
@@ -3081,7 +3093,7 @@ html.has-motion .modal-strip__tel {
 
 html.has-motion .modal-strip__clouds {
   position: absolute;
-  inset: -40% 0;
+  inset: 0 -40%;
   z-index: 4;
   display: block;
   background:
@@ -3093,22 +3105,10 @@ html.has-motion .modal-strip__clouds {
   pointer-events: none;
 }
 
-/* Fundos de reserva em movimento: --bgy desloca mar, asfalto e grade */
+/* Água em movimento: --bgx corre para a esquerda enquanto o veículo anda; a ondulação fina
+   anda mais que a larga (profundidade). A estrada lê o mesmo --bgx para as faixas tracejadas. */
 html.has-motion .modal-strip__bg {
-  background-position: 0 var(--bgy, 0px), 0 0;
-}
-
-html.has-motion .modal-strip--ar .modal-strip__bg {
-  background-position: var(--bgx, 0px) var(--bgy, 0px);
-}
-
-html.has-motion .modal-strip--terra .modal-strip__bg.is-missing::before {
-  background-position: 50% var(--bgy, 0px), 30% 0, 70% 0, 0 0;
-}
-
-html.has-motion .modal-strip__bg > img {
-  height: 130%;
-  margin-top: -15%;
+  background-position: var(--bgx, 0px) 0, calc(var(--bgx, 0px) * 0.55) 0, 0 0;
 }
 
 @media (max-width: 899px) {
@@ -3141,11 +3141,6 @@ html.has-motion .modal-strip__bg > img {
   stroke-opacity: 0.7;
   stroke-width: 1.5;
   stroke-dasharray: 2 7;
-}
-
-.modal-strip--ar .journey__plan {
-  stroke: var(--ink);
-  stroke-opacity: 0.6;
 }
 
 .journey__done {
@@ -3196,12 +3191,13 @@ html.has-motion .modal-strip__vehicle {
 }
 
 .vehicle__cargo--ship {
-  left: 24%;
-  width: 52%;
-  top: 47%;
-  height: 8%;
+  left: 22%;
+  width: 56%;
+  top: 46%;
+  height: 4.5%;
+  border-width: 1px;
   background: repeating-linear-gradient(90deg, var(--signal) 0 5px, #D23C0E 5px 7px);
-  outline: 2px solid var(--paper);
+  outline: 1px solid var(--paper);
 }
 
 .vehicle__cargo--truck {
