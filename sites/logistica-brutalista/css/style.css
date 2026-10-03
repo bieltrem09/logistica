@@ -1241,32 +1241,34 @@ button {
   pointer-events: none;
 }
 
-/* Vista aérea: três águas (cores medidas na referência) com textura de ondas em SVG
-   (assets/img/agua-*.svg) misturada por overlay. A faixa do meio tem a estrada. */
-.modal-strip__bg {
-  background-size: 240px 240px, 520px 520px, 100% 100%;
-  background-blend-mode: overlay, overlay, normal;
+/* Vista aérea: três águas com as cores medidas na referência. A textura de ondas é uma imagem
+   pequena que se repete sem emenda (assets/img/agua-*.webp, 480 px) numa camada própria: na
+   animação ela corre por transform (--bgx), sem redesenhar a faixa a cada quadro. */
+.modal-strip__bg::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 0;
+  width: calc(100% + 1600px);
+  background: var(--water) 0 0 / 480px 480px repeat;
 }
 
 .modal-strip--mar .modal-strip__bg {
   --media-bg: #044D87;
-  background-image:
-    url("../assets/img/agua-fina.svg"),
-    url("../assets/img/agua-ondas.svg"),
-    radial-gradient(120% 90% at 45% 35%, #065491, #044D87 60%, #03467C);
+  --water: url("../assets/img/agua-mar.webp");
 }
 
 .modal-strip--mar .modal-strip__bg::after {
-  background: linear-gradient(0deg, rgba(2, 30, 60, 0.85) 0%, rgba(2, 30, 60, 0) 55%);
+  background:
+    linear-gradient(0deg, rgba(2, 30, 60, 0.85) 0%, rgba(2, 30, 60, 0) 55%),
+    radial-gradient(120% 90% at 45% 35%, rgba(255, 255, 255, 0.05), transparent 60%);
 }
 
 .modal-strip--terra .modal-strip__bg {
   --media-bg: #0B2938;
-  background-image:
-    url("../assets/img/agua-fina-densa.svg"),
-    url("../assets/img/agua-ondas-densa.svg"),
-    radial-gradient(120% 90% at 50% 35%, #0E3040, #0B2938 60%, #09232F);
-  background-size: 240px 240px, 300px 300px, 100% 100%;
+  --water: url("../assets/img/agua-terra.webp");
 }
 
 .modal-strip--terra .modal-strip__bg::after {
@@ -1294,14 +1296,13 @@ button {
 
 .modal-strip--ar .modal-strip__bg {
   --media-bg: #043F56;
-  background-image:
-    url("../assets/img/agua-fina.svg"),
-    url("../assets/img/agua-ondas.svg"),
-    radial-gradient(120% 90% at 55% 35%, #054660, #043F56 60%, #03384C);
+  --water: url("../assets/img/agua-ar.webp");
 }
 
 .modal-strip--ar .modal-strip__bg::after {
-  background: linear-gradient(0deg, rgba(2, 30, 42, 0.88) 0%, rgba(2, 30, 42, 0) 55%);
+  background:
+    linear-gradient(0deg, rgba(2, 30, 42, 0.88) 0%, rgba(2, 30, 42, 0) 55%),
+    radial-gradient(120% 90% at 55% 35%, rgba(255, 255, 255, 0.05), transparent 60%);
 }
 
 /* Veículos vistos de cima, atravessando as divisões */
@@ -2028,7 +2029,7 @@ button {
 
 .voices__quote {
   font-size: 1em;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.28;
   letter-spacing: -0.02em;
 }
@@ -2192,7 +2193,7 @@ button {
   }
 }
 
-/* Fotos editoriais (Números e Processo): moldura e legenda técnica, como a foto do Sobre.
+/* Foto editorial (Processo): moldura e legenda técnica, como a foto do Sobre.
    A animação (js/animations/photos.js) abre cada foto de baixo para cima e segue com parallax. */
 .photo__media {
   aspect-ratio: 4 / 3;
@@ -2209,24 +2210,6 @@ button {
   border-top: 1px solid var(--rule);
 }
 
-.photo-pair {
-  display: grid;
-  gap: 32px;
-  margin-top: clamp(48px, 7vw, 112px);
-}
-
-.photo--crane .photo__media {
-  aspect-ratio: 4 / 5;
-}
-
-.photo--crane img {
-  object-position: 78% 50%; /* o moitão e o gancho, à direita da foto */
-}
-
-.photo--lift img {
-  object-position: 50% 35%;
-}
-
 .photo--band {
   margin-top: clamp(56px, 8vw, 128px);
 }
@@ -2240,25 +2223,6 @@ button {
 }
 
 @media (min-width: 900px) {
-  .photo-pair {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    column-gap: var(--gap);
-    align-items: start;
-  }
-
-  .photo--crane {
-    grid-column: 1 / span 5;
-  }
-
-  .photo--lift {
-    grid-column: 6 / -1;
-    margin-top: clamp(64px, 9vw, 160px);
-  }
-
-  .photo--lift .photo__media {
-    aspect-ratio: 16 / 11;
-  }
-
   .photo--band {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -2905,6 +2869,12 @@ html.has-motion .hero-spacer {
   height: 150svh;
 }
 
+@media (max-width: 899px) {
+  html.has-motion .hero-spacer {
+    height: 115svh; /* no celular a cena do hero pede menos rolagem */
+  }
+}
+
 html.has-3d .hero__gl {
   position: absolute;
   inset: 0;
@@ -3187,10 +3157,11 @@ html.has-motion .modal-strip__clouds {
   pointer-events: none;
 }
 
-/* Água em movimento: --bgx corre para a esquerda enquanto o veículo anda; a ondulação fina
-   anda mais que a larga (profundidade). A estrada lê o mesmo --bgx para as faixas tracejadas. */
-html.has-motion .modal-strip__bg {
-  background-position: var(--bgx, 0px) 0, calc(var(--bgx, 0px) * 0.55) 0, 0 0;
+/* Água em movimento: a camada de ondas corre para a esquerda (--bgx) enquanto o veículo anda,
+   só com transform. A estrada lê o mesmo --bgx para as faixas tracejadas. */
+html.has-motion .modal-strip__bg::before {
+  transform: translate3d(var(--bgx, 0px), 0, 0);
+  will-change: transform;
 }
 
 @media (max-width: 899px) {

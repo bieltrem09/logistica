@@ -11,7 +11,7 @@
  * em metros e a rota de saída (Santos → 27 UF), desenhadas conforme a rolagem.
  */
 import { createDriver, HERO_PHASES, CONTAINER_HEIGHT_M } from '../hero-rig.js';
-import { q, qa, clamp, withTimeout, fmt } from './utils.js';
+import { q, qa, clamp, withTimeout, fmt, isLightDevice } from './utils.js';
 
 const { gsap, ScrollTrigger } = window;
 
@@ -124,7 +124,10 @@ async function setupHero(textures) {
   const cargo = q('.hero__cargo');
   const canvas = q('.hero__gl');
   const tag = q('.hero__tag');
-  q('.hero__doors').style.setProperty('--door-tex', `url("${textures.doors.toDataURL('image/jpeg', 0.9)}")`);
+  // Textura das portas: convertida em segundo plano (toBlob não trava a tela como toDataURL)
+  textures.doors.toBlob((blob) => {
+    if (blob) q('.hero__doors').style.setProperty('--door-tex', `url("${URL.createObjectURL(blob)}")`);
+  }, 'image/jpeg', 0.88);
 
   const driver = createDriver();
   driver.measure(heroEl, cargo);
@@ -133,7 +136,8 @@ async function setupHero(textures) {
 
   let view = null;
   let is3d = false;
-  if (hasWebGL()) {
+  // Celular e tablet: o mesmo movimento na versão 2D — não baixa o Three.js nem renderiza WebGL
+  if (!isLightDevice() && hasWebGL()) {
     try {
       const mod = await withTimeout(import('../hero-3d.js'), 6000);
       view = mod.createHero3D({ canvas, textures });

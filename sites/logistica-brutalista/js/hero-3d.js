@@ -102,7 +102,7 @@ export function createHero3D({ canvas, textures }) {
 
   function layout(geom) {
     G = geom;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5); // nitidez de sobra para o contêiner, metade do custo em telas retina
     renderer.setPixelRatio(dpr);
     renderer.setSize(G.W, G.H, false);
     camera.aspect = G.W / G.H;

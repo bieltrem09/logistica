@@ -1,5 +1,5 @@
 /**
- * Fotos editoriais (.photo, em Números e Processo): a mesma entrada da foto do Sobre.
+ * Fotos editoriais (.photo, em Processo): a mesma entrada da foto do Sobre.
  * A moldura abre de baixo para cima, a imagem assenta (1.24 → 1.12) e a legenda chega
  * por último; depois a foto segue com parallax leve dentro da moldura (a escala cobre
  * o deslocamento, então a borda nunca aparece). Sem animação, as fotos ficam paradas.

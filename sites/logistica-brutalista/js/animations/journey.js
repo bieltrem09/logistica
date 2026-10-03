@@ -448,7 +448,7 @@ export function initLogisticsJourney({ smoother }) {
       scrollTrigger: {
         trigger: pin,
         start: 'top top',
-        end: () => `+=${vh() * 5.4}`,
+        end: () => `+=${vh() * 4.2}`,
         pin: true,
         scrub: true,
         invalidateOnRefresh: true,

@@ -316,13 +316,15 @@ export function drawHook(size = 256) {
   return canvas;
 }
 
-export async function drawContainerTextures() {
+export async function drawContainerTextures({ full = true } = {}) {
   if (document.fonts) {
     await Promise.all([
       document.fonts.load(`200px ${DISPLAY}`, 'VETOR'),
       document.fonts.load(`500 34px ${MONO}`, 'VTRU 204816'),
     ]).catch(() => {});
   }
+  // Sem o contêiner 3D (celular), só as portas são usadas: uma textura menor, nada das outras faces
+  if (!full) return { doors: drawDoors(768) };
   return {
     side: drawSide(),
     doors: drawDoors(),

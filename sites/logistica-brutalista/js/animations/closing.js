@@ -68,6 +68,8 @@ export function initClients() {
     trigger: marquee,
     start: 'top bottom',
     end: 'bottom top',
+    // fora da tela o letreiro para (nada roda à toa)
+    onToggle: (self) => (self.isActive ? loop.resume() : loop.pause()),
     onUpdate: (self) => {
       const v = self.getVelocity();
       const dir = self.direction;

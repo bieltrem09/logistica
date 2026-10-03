@@ -5,6 +5,8 @@
 const { gsap, SplitText } = window;
 
 export const q = (sel, root = document) => root.querySelector(sel);
+/** Celular e tablet: versões leves (hero 2D, menos texturas, abertura mais curta). */
+export const isLightDevice = () => window.matchMedia('(max-width: 899px), (pointer: coarse)').matches;
 export const qa = (sel, root = document) => [...root.querySelectorAll(sel)];
 export const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 export const lerp = (a, b, t) => a + (b - a) * t;

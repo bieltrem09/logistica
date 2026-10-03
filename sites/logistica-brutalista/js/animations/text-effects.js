@@ -8,7 +8,7 @@
  *               as da nova sobem do desfoque, 30 ms entre letras
  *
  * Os componentes foram desenhados para texto de ~36 px. Aqui distâncias e desfoque crescem
- * com o corpo do título (até 3×) para o efeito ter o mesmo peso nos títulos grandes.
+ * com o corpo do título (até 1,6×; no celular ficam no tamanho original, mais leve).
  * Com movimento reduzido nada disso roda (motion.js não inicia): os títulos ficam parados.
  */
 import { qa, clamp, labelFromText } from './utils.js';
@@ -16,7 +16,9 @@ import { qa, clamp, labelFromText } from './utils.js';
 const { gsap, ScrollTrigger, SplitText } = window;
 
 const BASE_PX = 36;
-const scaleOf = (el) => clamp(parseFloat(getComputedStyle(el).fontSize) / BASE_PX, 1, 3);
+// desfoque é caro em letras gigantes: o efeito cresce com o título só até 1,6× (no celular, 1×)
+const MAX_SCALE = window.matchMedia('(max-width: 899px)').matches ? 1 : 1.6;
+const scaleOf = (el) => clamp(parseFloat(getComputedStyle(el).fontSize) / BASE_PX, 1, MAX_SCALE);
 const blur = (px) => `blur(${px}px)`;
 
 /** TextBlurReveal: revela o título palavra a palavra (ou letra a letra) ao entrar na tela. */

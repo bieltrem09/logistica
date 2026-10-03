@@ -2,9 +2,12 @@
  * Entrada: porta de enrolar com manifesto de carga, depois o hero se monta
  * (título sobe da máscara, grade desce, contêiner cai no cabo, rota aparece).
  */
-import { q, qa } from './utils.js';
+import { q, qa, isLightDevice } from './utils.js';
 
 const { gsap } = window;
+
+// No celular a abertura é a mesma coreografia, só mais rápida (a tela de entrada não segura o usuário)
+const SPEED = isLightDevice() ? 1.8 : 1;
 
 export function createIntro(endLoading) {
   const pre = q('#preloader');
@@ -30,12 +33,13 @@ export function createIntro(endLoading) {
   const enter = gsap
     .timeline()
     .from(qa('.preloader__ui > *', pre), { y: 26, opacity: 0, duration: 0.7, ease: 'power3.out', stagger: 0.06 })
-    .to(prog, { v: 84, duration: 1.6, ease: 'power2.inOut', onUpdate: render }, 0.15);
+    .to(prog, { v: 84, duration: 1.6, ease: 'power2.inOut', onUpdate: render }, 0.15)
+    .timeScale(SPEED);
 
   return {
     async finish(onReveal) {
       await enter;
-      await gsap.to(prog, { v: 100, duration: 0.45, ease: 'power2.out', onUpdate: render });
+      await gsap.to(prog, { v: 100, duration: 0.45, ease: 'power2.out', onUpdate: render }).timeScale(SPEED);
       await gsap
         .timeline()
         .to(q('.preloader__ui', pre), { y: -30, opacity: 0, duration: 0.45, ease: 'power3.in' })
@@ -45,7 +49,8 @@ export function createIntro(endLoading) {
           { scaleY: 0.5, transformOrigin: '50% 0%', duration: 1.15, ease: 'expo.inOut', stagger: { each: 0.025, from: 'end' } },
           '<',
         )
-        .add(() => onReveal?.(), '<+=0.4');
+        .add(() => onReveal?.(), '<+=0.4')
+        .timeScale(SPEED);
       endLoading();
     },
   };

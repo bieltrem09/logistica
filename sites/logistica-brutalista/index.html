@@ -26,11 +26,11 @@
   <meta name="twitter:image" content="https://www.vetorlogistica.com.br/assets/img/og-cover.jpg">
 
   <!-- Fontes -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter+Tight:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 
-  <link rel="preload" as="image" href="assets/img/hero-sky.webp" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="css/style.css">
 
   <!-- Entrada: liga a tela de carregamento antes do primeiro paint (some sozinha se o JS falhar) -->
@@ -49,6 +49,24 @@
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollSmoother.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js" defer></script>
   <script type="module" src="js/main.js"></script>
+  <!-- Módulos da animação: baixados em paralelo enquanto a página carrega (sem cascata de imports) -->
+  <link rel="modulepreload" href="js/motion.js">
+  <link rel="modulepreload" href="js/textures.js">
+  <link rel="modulepreload" href="js/hero-rig.js">
+  <link rel="modulepreload" href="js/cable-physics.js">
+  <link rel="modulepreload" href="js/animations/utils.js">
+  <link rel="modulepreload" href="js/animations/intro.js">
+  <link rel="modulepreload" href="js/animations/hero.js">
+  <link rel="modulepreload" href="js/animations/section2.js">
+  <link rel="modulepreload" href="js/animations/section3.js">
+  <link rel="modulepreload" href="js/animations/journey.js">
+  <link rel="modulepreload" href="js/animations/section5.js">
+  <link rel="modulepreload" href="js/animations/carousel.js">
+  <link rel="modulepreload" href="js/animations/statistics.js">
+  <link rel="modulepreload" href="js/animations/closing.js">
+  <link rel="modulepreload" href="js/animations/global.js">
+  <link rel="modulepreload" href="js/animations/text-effects.js">
+  <link rel="modulepreload" href="js/animations/photos.js">
 
   <script type="application/ld+json">
   {
@@ -223,9 +241,8 @@
         <!-- ═════════ HERO ═════════ -->
         <section class="hero" id="inicio" data-theme="dark" aria-labelledby="hero-title">
           <!-- Camada 1: céu -->
-          <div class="hero__sky media" data-anim="parallax" data-speed="0.6">
-            <img src="assets/img/hero-sky.webp" width="2560" height="1440" alt="" fetchpriority="high" decoding="async">
-          </div>
+          <!-- Foto de céu opcional: <img src="assets/img/hero-sky.webp" width="2560" height="1440" alt="" fetchpriority="high" decoding="async"> (tire o is-missing) -->
+          <div class="hero__sky media is-missing" data-anim="parallax" data-speed="0.6"></div>
           <div class="hero__shade" aria-hidden="true"></div>
           <div class="hero__dim" aria-hidden="true"></div>
 
@@ -258,9 +275,9 @@
           </div>
 
           <!-- Camada 3: contêiner suspenso (PNG recortado, com vetor de reserva) -->
-          <div class="hero__cargo media" data-anim="parallax" data-speed="1.15">
+          <!-- Foto opcional do contêiner: <img class="hero__cargo-img" src="assets/img/hero-container.png" width="2000" height="1560" alt="…"> (tire o is-missing) -->
+          <div class="hero__cargo media is-missing" data-anim="parallax" data-speed="1.15">
             <span class="hero__cable" aria-hidden="true"></span>
-            <img class="hero__cargo-img" src="assets/img/hero-container.png" width="2000" height="1560" alt="Contêiner laranja da VETOR suspenso por cabos de aço" decoding="async" fetchpriority="high">
             <svg class="media__fallback hero__cargo-svg" viewBox="0 0 1000 780" role="img" aria-label="Contêiner laranja da VETOR suspenso por cabos de aço">
               <defs>
                 <pattern id="cnt-ribs" width="40" height="10" patternUnits="userSpaceOnUse">
@@ -373,7 +390,7 @@
 
             <figure class="about__figure" data-anim="reveal-img">
               <div class="about__media media media--photo" data-label="sobre-navio.webp · 1024×576">
-                <img src="assets/img/sobre-navio.webp" width="1024" height="576" loading="lazy" decoding="async" alt="Navio porta-contêineres carregado, de casco preto e vermelho, navegando em direção ao porto" data-anim="parallax" data-speed="0.92">
+                <img src="assets/img/sobre-navio.webp" srcset="assets/img/sobre-navio-640.webp 640w, assets/img/sobre-navio.webp 1024w" sizes="(min-width: 768px) 60vw, 100vw" width="1024" height="576" loading="lazy" decoding="async" alt="Navio porta-contêineres carregado, de casco preto e vermelho, navegando em direção ao porto" data-anim="parallax" data-speed="0.92">
               </div>
               <figcaption class="about__caption micro">
                 <span>Fig. 01</span><span>Longo curso · Santos/SP</span><span>Operação 24/7</span>
@@ -489,7 +506,7 @@
                 <span class="line"><span class="line__inner">Serviços</span></span>
               </h2>
               <figure class="cut-title__media media media--photo" data-anim="reveal-img" data-label="servicos-operador.webp · 1333×760">
-                <img src="assets/img/servicos-operador.webp" width="1333" height="760" loading="lazy" decoding="async" alt="Operador de boné, luvas e calça laranja abrindo a porta de um contêiner azul" data-anim="parallax" data-speed="0.9">
+                <img src="assets/img/servicos-operador.webp" srcset="assets/img/servicos-operador-720.webp 720w, assets/img/servicos-operador.webp 1333w" sizes="(min-width: 768px) 50vw, 90vw" width="1333" height="760" loading="lazy" decoding="async" alt="Operador de boné, luvas e calça laranja abrindo a porta de um contêiner azul" data-anim="parallax" data-speed="0.9">
               </figure>
               <p class="cut-title__word cut-title__word--ghost display" aria-hidden="true">
                 <span class="line"><span class="line__inner">Serviços</span></span>
@@ -631,22 +648,6 @@
             </h2>
           </div>
 
-          <!-- Fotos: a lança do guindaste e o contêiner içado (peso pesado) -->
-          <div class="photo-pair wrap">
-            <figure class="photo photo--crane">
-              <div class="photo__media media media--photo">
-                <img src="assets/img/numeros-guindaste.webp" width="1024" height="683" loading="lazy" decoding="async" alt="Lança amarela de guindaste com o moitão e o gancho de içamento">
-              </div>
-              <figcaption class="photo__caption micro"><span>Fig. 02</span><span>Moitão · gancho principal</span></figcaption>
-            </figure>
-            <figure class="photo photo--lift">
-              <div class="photo__media media media--photo">
-                <img src="assets/img/numeros-conteiner.webp" width="1600" height="1333" loading="lazy" decoding="async" alt="Contêiner vermelho içado por cabos de aço contra o céu">
-              </div>
-              <figcaption class="photo__caption micro"><span>Fig. 03</span><span>Içamento de contêiner</span><span>Peso pesado</span></figcaption>
-            </figure>
-          </div>
-
           <ul class="stats wrap" data-anim="stagger">
             <li class="stat">
               <p class="stat__value"><span class="stat__affix">+</span><span data-anim="counter" data-count="12000" data-decimals="0">12.000</span></p>
@@ -742,7 +743,7 @@
           <!-- Foto: operadores no pátio, entre as pilhas de contêineres -->
           <figure class="photo photo--band wrap">
             <div class="photo__media media media--photo">
-              <img src="assets/img/processo-patio.webp" width="1024" height="687" loading="lazy" decoding="async" alt="Dois operadores de capacete e colete caminhando entre pilhas de contêineres no pátio">
+              <img src="assets/img/processo-patio.webp" srcset="assets/img/processo-patio-640.webp 640w, assets/img/processo-patio.webp 1024w" sizes="(min-width: 900px) 80vw, 100vw" width="1024" height="687" loading="lazy" decoding="async" alt="Dois operadores de capacete e colete caminhando entre pilhas de contêineres no pátio">
             </div>
             <figcaption class="photo__caption micro"><span>Fig. 04</span><span>Operação no pátio</span><span>Coleta → entrega</span></figcaption>
           </figure>

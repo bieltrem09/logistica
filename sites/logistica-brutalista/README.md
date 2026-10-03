@@ -32,7 +32,7 @@ js/animations/             Uma função por seção:
   carousel.js                initContainerCarousel  pátio: carrossel horizontal fixo
   statistics.js              initStatistics         contadores
   closing.js, global.js      processo, clientes, rastreio, contato, rodapé; cabeçalhos, cursor, âncoras
-  photos.js                  initPhotos             fotos de Números e Processo: abrem de baixo e seguem com parallax
+  photos.js                  initPhotos             foto de Processo: abre de baixo e segue com parallax
   text-effects.js            initTitleEffects       títulos das seções: entram com desfoque (TextBlurReveal) e uma palavra troca (TextMorph)
   intro.js, utils.js         porta de enrolar de entrada; ajudantes de texto e números
 js/hero-3d.js              Contêiner 3D do hero (Three.js)
@@ -59,9 +59,14 @@ A sequência completa está descrita em `DIRECAO-DE-ARTE.md` (seção 4). Onde a
 | Forma e tempo do azul da seção 5 | `initSection5Animation()` (`DOT`, `start`/`end` do ScrollTrigger) |
 | Transição do carrossel e encaixe | `focus()` e `snap` em `js/animations/carousel.js` |
 | Altura da linha dos veículos na seção de modais | `--lane` em `.modais__pin` (CSS) e `LANE` em `js/animations/journey.js` (os dois iguais) |
-| Cores e textura da água das faixas | gradientes em `.modal-strip--mar/terra/ar .modal-strip__bg` + `assets/img/agua-*.svg` (ruído em SVG, misturado por overlay) |
+| Cores e textura da água das faixas | `assets/img/agua-mar/terra/ar.webp` (480 px, repetem sem emenda; cor média medida na referência) e `--water` / `--media-bg` em `.modal-strip--* .modal-strip__bg` |
 | Velocidade de cada linha do manifesto (parallax) | `ENTER`, `LEAVE`, `DRIFT` e `SETTLE` em `js/animations/section2.js` |
 | Palavras que trocam nos títulos | atributo `data-morph="a\|b\|c"` no `index.html` (cada alternativa não pode ser mais larga que a linha mais longa do título); tempos em `js/animations/text-effects.js` |
+
+**Leveza no celular:** rolagem nativa no toque (`smoothTouch: false`; na roda do mouse, suavização de 0,75 s);
+hero em 2D no celular/tablet (não baixa o Three.js); no computador o 3D renderiza no máximo a 1,5× de densidade;
+água dos modais em imagem pequena movida por `transform`; desfoque dos títulos limitado; letreiro de clientes
+parado fora da tela; fotos com versão menor (`srcset`) para telas estreitas; trechos fixados mais curtos no celular.
 
 **Robustez:** a tela de entrada some sozinha em 9 s se algo falhar. Sem WebGL, o mesmo movimento roda no vetor 2D.
 Com `prefers-reduced-motion`, sem JS ou sem acesso ao CDN, o site fica no estado estático completo.

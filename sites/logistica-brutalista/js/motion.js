@@ -13,12 +13,12 @@
  *   6       initContainerCarousel  pátio em carrossel horizontal fixo
  *   números initStatistics         contadores com easing
  *   títulos initTitleEffects       palavras entram com desfoque; uma palavra troca (text-effects.js)
- *   fotos   initPhotos             fotos de Números e Processo abrem e seguem com parallax (photos.js)
+ *   fotos   initPhotos             foto de Processo abre e segue com parallax (photos.js)
  *   5–8     processo, clientes, rastreamento, contato e rodapé
  * Sem GSAP, sem Three.js ou com movimento reduzido, o site fica no estado estático.
  */
 import { drawContainerTextures } from './textures.js';
-import { withTimeout } from './animations/utils.js';
+import { withTimeout, isLightDevice } from './animations/utils.js';
 import { createIntro, heroEntrance } from './animations/intro.js';
 import { initHeroAnimation } from './animations/hero.js';
 import { initSection2Animation } from './animations/section2.js';
@@ -50,11 +50,13 @@ export async function initMotion({ setHeaderTheme = () => {} } = {}) {
   root.classList.add('has-motion');
   ScrollTrigger.config({ ignoreMobileResize: true });
 
+  // Rolagem: no toque é a nativa do aparelho (leve, sem atraso no dedo); na roda do mouse,
+  // uma suavização curta que acompanha sem arrastar
   const smoother = ScrollSmoother.create({
     wrapper: '#smooth-wrapper',
     content: '#smooth-content',
-    smooth: 1.05,
-    smoothTouch: 0.08,
+    smooth: 0.75,
+    smoothTouch: false,
     effects: false,
   });
   smoother.paused(true);
@@ -64,7 +66,7 @@ export async function initMotion({ setHeaderTheme = () => {} } = {}) {
   let textures = null;
   try {
     await withTimeout(document.fonts ? document.fonts.ready : Promise.resolve(), 3000).catch(() => {});
-    textures = await drawContainerTextures();
+    textures = await drawContainerTextures({ full: !isLightDevice() });
   } catch (err) {
     console.warn('[vetor] texturas do contêiner indisponíveis:', err);
   }
