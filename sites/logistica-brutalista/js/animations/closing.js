@@ -2,12 +2,11 @@
  * Seções finais: processo (a carga percorre a rota), clientes (letreiro que
  * responde à velocidade), rastreamento (ticket impresso), contato e rodapé.
  */
-import { q, qa, clamp, maskLines, splitInner, riseWords, labelFromText } from './utils.js';
+import { q, qa, clamp } from './utils.js';
 
 const { gsap, ScrollTrigger, SplitText } = window;
 
 export function initProcess() {
-  riseWords(q('.process__title'));
   const steps = q('.route__steps');
   const items = qa('.step', steps);
   const nodes = items.map((s) => q('.step__node', s));
@@ -59,7 +58,6 @@ export function initProcess() {
 }
 
 export function initClients() {
-  riseWords(q('.clients__title'));
   const marquee = q('.marquee');
   const tracks = qa('.marquee__track', marquee);
   const loop = gsap.to(tracks, { xPercent: -100, duration: 26, ease: 'none', repeat: -1 });
@@ -97,7 +95,6 @@ export function initClients() {
 }
 
 export function initTracking() {
-  riseWords(q('.tracking__title'));
   const input = q('#track-code');
   const placeholder = input.getAttribute('placeholder') || '';
   input.setAttribute('placeholder', '');
@@ -126,22 +123,10 @@ export function initTracking() {
 }
 
 export function initContact() {
-  const title = q('.contact__title');
-  labelFromText(title);
-  const [l1, l2] = maskLines(title);
-  const s1 = splitInner(l1, 'chars');
-  const s2 = splitInner(l2, 'chars');
+  // O título "Vamos carregar?" é revelado por text-effects.js; o botão chega logo depois
   gsap
-    .timeline({
-      scrollTrigger: { trigger: title, start: 'top 80%', once: true },
-      onComplete: () => {
-        s1.revert();
-        s2.revert();
-      },
-    })
-    .from(s1.chars, { yPercent: -200, duration: 1.1, ease: 'bounce.out', stagger: 0.05 })
-    .from(s2.chars, { yPercent: 185, duration: 1, ease: 'expo.out', stagger: 0.035 }, '-=0.7')
-    .from('.contact__wa', { scale: 0.6, rotation: -8, opacity: 0, duration: 1, ease: 'back.out(1.7)' }, '-=0.6')
+    .timeline({ scrollTrigger: { trigger: '.contact__title', start: 'top 85%', once: true }, delay: 0.5 })
+    .from('.contact__wa', { scale: 0.6, rotation: -8, opacity: 0, duration: 1, ease: 'back.out(1.7)' })
     .from('.contact__note', { y: 20, opacity: 0, duration: 0.7, ease: 'power3.out' }, '-=0.6');
 
   gsap.from(qa('.contact__data > div'), {

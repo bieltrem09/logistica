@@ -12,6 +12,7 @@
  *   5       initSection5Animation  o azul nasce do ponto de destino e corta "SERVIÇOS"
  *   6       initContainerCarousel  pátio em carrossel horizontal fixo
  *   números initStatistics         contadores com easing
+ *   títulos initTitleEffects       palavras entram com desfoque; uma palavra troca (text-effects.js)
  *   5–8     processo, clientes, rastreamento, contato e rodapé
  * Sem GSAP, sem Three.js ou com movimento reduzido, o site fica no estado estático.
  */
@@ -27,6 +28,7 @@ import { initContainerCarousel } from './animations/carousel.js';
 import { initStatistics } from './animations/statistics.js';
 import { initProcess, initClients, initTracking, initContact, initFooter } from './animations/closing.js';
 import { initSectionHeads, initFadeUps, initSectionEntrances, initPointer, initAnchors } from './animations/global.js';
+import { initTitleEffects } from './animations/text-effects.js';
 
 export async function initMotion({ setHeaderTheme = () => {} } = {}) {
   const { gsap, ScrollTrigger, ScrollSmoother, SplitText } = window;
@@ -78,6 +80,8 @@ export async function initMotion({ setHeaderTheme = () => {} } = {}) {
   initClients();
   initTracking();
   initContact();
+  // Títulos das seções: revelação com desfoque e palavra que troca (TextBlurReveal + TextMorph)
+  initTitleEffects(['.modais__title', '.numbers__title', '.process__title', '.clients__title', '.tracking__title', '.contact__title'].map((sel) => document.querySelector(sel)));
   initFooter();
   initSectionHeads();
   initFadeUps();

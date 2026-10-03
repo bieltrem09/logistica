@@ -29,21 +29,6 @@ export function splitInner(line, type) {
   return SplitText.create(q('.line__inner', line), { type, tag: 'span', aria: 'none' });
 }
 
-/** Palavras sobem de dentro da máscara de cada linha. */
-export function riseWords(title, { start = 'top 82%', stagger = 0.07 } = {}) {
-  const words = maskLines(title).flatMap((line) => splitInner(line, 'words').words);
-  gsap.from(words, {
-    yPercent: 185,
-    rotation: 5,
-    transformOrigin: '0% 100%',
-    duration: 1.15,
-    ease: 'expo.out',
-    stagger,
-    scrollTrigger: { trigger: title, start, once: true },
-  });
-  return words;
-}
-
 /** O título dividido em letras continua legível como uma frase só. */
 export function labelFromText(el) {
   el.setAttribute('aria-label', el.textContent.replace(/\s+/g, ' ').trim());

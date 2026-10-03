@@ -2652,6 +2652,19 @@ html.has-motion {
 }
 
 /* Máscara das linhas para revelação (deixa espaço para acentos e cedilha) */
+/* Palavra que troca nos títulos (js/animations/text-effects.js) */
+html.has-motion .morph.is-morphing {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+html.has-motion .morph__word,
+html.has-motion .morph__char {
+  display: inline-block;
+  white-space: nowrap;
+}
+
 html.has-motion .line.is-masked {
   clip-path: polygon(-6% -42%, 106% -42%, 106% 142%, -6% 142%);
 }

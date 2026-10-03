@@ -11,7 +11,7 @@
  * A largura final é reservada para os sufixos (%, m², anos) não andarem.
  * Leitores de tela recebem o valor final desde o início.
  */
-import { q, qa, fmt, maskLines, splitInner, labelFromText } from './utils.js';
+import { qa, fmt } from './utils.js';
 
 const { gsap } = window;
 
@@ -42,25 +42,6 @@ function valueAt({ value }, t) {
 }
 
 export function initStatistics() {
-  const title = q('.numbers__title');
-  labelFromText(title);
-  const [l1, l2] = maskLines(title);
-  const s1 = splitInner(l1, 'chars');
-  const s2 = splitInner(l2, 'chars');
-  gsap
-    .timeline({
-      scrollTrigger: { trigger: title, start: 'top 80%', once: true },
-      onComplete: () => {
-        s1.revert();
-        s2.revert();
-      },
-    })
-    // Peso: as letras caem acelerando e o título sente o impacto
-    .from(s1.chars, { yPercent: -160, duration: 0.7, ease: 'power3.in', stagger: 0.045 })
-    .to(title, { keyframes: { y: [0, 6, -2, 0] }, duration: 0.3, ease: 'none' }, '-=0.05')
-    // Prazo: chega deslizando, leve
-    .from(s2.chars, { x: () => window.innerWidth * 0.5, duration: 0.9, ease: 'power3.out', stagger: 0.02 }, '-=0.45');
-
   qa('.stat').forEach((stat, si) => {
     const counters = qa('[data-anim="counter"]', stat).flatMap(buildCounter);
     const affix = qa('.stat__affix', stat);

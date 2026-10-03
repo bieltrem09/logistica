@@ -31,6 +31,7 @@ js/animations/             Uma função por seção:
   carousel.js                initContainerCarousel  pátio: carrossel horizontal fixo
   statistics.js              initStatistics         contadores
   closing.js, global.js      processo, clientes, rastreio, contato, rodapé; cabeçalhos, cursor, âncoras
+  text-effects.js            initTitleEffects       títulos das seções: entram com desfoque (TextBlurReveal) e uma palavra troca (TextMorph)
   intro.js, utils.js         porta de enrolar de entrada; ajudantes de texto e números
 js/hero-3d.js              Contêiner 3D do hero (Three.js)
 js/hero-rig.js             Geometria do hero + piloto que converte rolagem em comando de guindaste
@@ -55,6 +56,7 @@ A sequência completa está descrita em `DIRECAO-DE-ARTE.md` (seção 4). Onde a
 | Duração da jornada e de cada veículo | `initLogisticsJourney()` (`end: vh() * 7.5` no desktop, `5.4` no celular) |
 | Forma e tempo do azul da seção 5 | `initSection5Animation()` (`DOT`, `start`/`end` do ScrollTrigger) |
 | Transição do carrossel e encaixe | `focus()` e `snap` em `js/animations/carousel.js` |
+| Palavras que trocam nos títulos | atributo `data-morph="a\|b\|c"` no `index.html` (cada alternativa não pode ser mais larga que a linha mais longa do título); tempos em `js/animations/text-effects.js` |
 
 **Robustez:** a tela de entrada some sozinha em 9 s se algo falhar. Sem WebGL, o mesmo movimento roda no vetor 2D.
 Com `prefers-reduced-motion`, sem JS ou sem acesso ao CDN, o site fica no estado estático completo.

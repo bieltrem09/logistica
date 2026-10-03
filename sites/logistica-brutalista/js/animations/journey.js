@@ -14,7 +14,7 @@
  * cada veículo anda num "trilho" do tamanho da faixa, deslocado por translate em %
  * (porcentagem do próprio trilho = da faixa), então acompanha a faixa abrindo e fechando.
  */
-import { q, qa, clamp, splitInner, labelFromText, fmt } from './utils.js';
+import { q, qa, clamp, fmt } from './utils.js';
 
 const { gsap, ScrollTrigger } = window;
 
@@ -168,31 +168,7 @@ function buildStripLayer(s, route, node) {
   return { svg, plan, done, rail, node: nodeEl, tag, dot: q('i', nodeEl), label: q('.journey__label', nodeEl) };
 }
 
-function initModaisHead() {
-  const title = q('.modais__title');
-  const [l1, l2] = qa('.line', title);
-  labelFromText(title);
-  l1.classList.add('is-masked');
-  const s1 = splitInner(l1, 'chars');
-  const s2 = splitInner(l2, 'chars');
-
-  // TRÊS MODAIS chega pela esteira; UM CONTATO é carimbado
-  gsap
-    .timeline({
-      scrollTrigger: { trigger: title, start: 'top 82%', once: true },
-      onComplete: () => {
-        s1.revert();
-        s2.revert();
-        l1.classList.remove('is-masked');
-      },
-    })
-    .from(s1.chars, { x: () => window.innerWidth * 0.55, duration: 1.25, ease: 'power4.out', stagger: 0.04 })
-    .from(s2.chars, { scale: 2.2, opacity: 0, duration: 0.42, ease: 'power4.in', stagger: 0.045 }, '-=0.55')
-    .to(title, { keyframes: { y: [0, 4, -2, 0] }, duration: 0.3, ease: 'none' }, '-=0.05');
-}
-
 export function initLogisticsJourney({ smoother }) {
-  initModaisHead();
 
   const pin = q('.modais__pin');
   const track = q('.modais__track');
