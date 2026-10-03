@@ -1243,7 +1243,8 @@ button {
 
 /* Vista aérea: três águas com as cores medidas na referência. A textura de ondas é uma imagem
    pequena que se repete sem emenda (assets/img/agua-*.webp, 480 px) numa camada própria: na
-   animação ela corre por transform (--bgx), sem redesenhar a faixa a cada quadro. */
+   animação ela corre por transform (--bgx, de 0 a −480 px e volta: um período da textura),
+   sem redesenhar a faixa a cada quadro. */
 .modal-strip__bg::before {
   content: "";
   position: absolute;
@@ -1251,7 +1252,7 @@ button {
   bottom: 0;
   left: 0;
   z-index: 0;
-  width: calc(100% + 1600px);
+  width: calc(100% + 480px);
   background: var(--water) 0 0 / 480px 480px repeat;
 }
 
@@ -1286,12 +1287,26 @@ button {
   top: calc(var(--lane) * 100%);
   height: clamp(64px, 14%, 132px);
   translate: 0 -50%;
+  overflow: hidden;
   background:
-    repeating-linear-gradient(90deg, rgba(217, 227, 234, 0.6) 0 46px, transparent 46px 86px) var(--bgx, 0px) 50% / 100% 4px no-repeat,
     linear-gradient(rgba(217, 227, 234, 0.55), rgba(217, 227, 234, 0.55)) 0 12% / 100% 2px no-repeat,
     linear-gradient(rgba(217, 227, 234, 0.55), rgba(217, 227, 234, 0.55)) 0 88% / 100% 2px no-repeat,
     linear-gradient(180deg, #2A4D62, #234559 50%, #1E3F52);
   box-shadow: 0 16px 30px rgba(0, 0, 0, 0.5), 0 -2px 0 rgba(255, 255, 255, 0.07);
+}
+
+/* Faixas tracejadas numa camada própria, um traço (86 px) mais larga que a estrada: andam com
+   a água (--rx, de 0 a −86 px) só por transform, sem repintar a estrada a cada quadro */
+.modal-strip__road::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: calc(100% + 86px);
+  height: 4px;
+  margin-top: -2px;
+  background: repeating-linear-gradient(90deg, rgba(217, 227, 234, 0.6) 0 46px, transparent 46px 86px);
+  transform: translate3d(var(--rx, 0px), 0, 0);
 }
 
 .modal-strip--ar .modal-strip__bg {
@@ -3158,9 +3173,13 @@ html.has-motion .modal-strip__clouds {
 }
 
 /* Água em movimento: a camada de ondas corre para a esquerda (--bgx) enquanto o veículo anda,
-   só com transform. A estrada lê o mesmo --bgx para as faixas tracejadas. */
+   só com transform. As faixas tracejadas da estrada andam junto (--rx). */
 html.has-motion .modal-strip__bg::before {
   transform: translate3d(var(--bgx, 0px), 0, 0);
+  will-change: transform;
+}
+
+html.has-motion .modal-strip__road::before {
   will-change: transform;
 }
 

@@ -88,22 +88,14 @@ function initHeader() {
     },
   );
 
-  let ticking = false;
+  // Lido no próprio evento de rolagem (antes das animações do quadro): ler scrollY depois
+  // delas obrigaria o navegador a recalcular o layout no meio do quadro, a cada quadro
+  let state = '';
   const updateState = () => {
-    header.dataset.state = window.scrollY > 8 ? 'scrolled' : 'top';
-    ticking = false;
+    const next = window.scrollY > 8 ? 'scrolled' : 'top';
+    if (next !== state) header.dataset.state = state = next;
   };
-
-  window.addEventListener(
-    'scroll',
-    () => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(updateState);
-      }
-    },
-    { passive: true },
-  );
+  window.addEventListener('scroll', updateState, { passive: true });
   updateState();
 
   return () => {

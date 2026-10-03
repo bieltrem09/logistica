@@ -15,8 +15,10 @@ export const withTimeout = (promise, ms) =>
   Promise.race([promise, wait(ms).then(() => Promise.reject(new Error(`timeout ${ms}ms`)))]);
 
 /** Número no formato brasileiro, com zeros à esquerda opcionais. */
+const formats = {}; // um formatador por nº de casas (criar um a cada quadro é caro)
 export const fmt = (n, pad = 0, decimals = 0) => {
-  const s = n.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  formats[decimals] ||= new Intl.NumberFormat('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  const s = formats[decimals].format(n);
   return pad ? s.padStart(pad, '0') : s;
 };
 

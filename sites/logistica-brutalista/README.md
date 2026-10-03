@@ -63,10 +63,14 @@ A sequência completa está descrita em `DIRECAO-DE-ARTE.md` (seção 4). Onde a
 | Velocidade de cada linha do manifesto (parallax) | `ENTER`, `LEAVE`, `DRIFT` e `SETTLE` em `js/animations/section2.js` |
 | Palavras que trocam nos títulos | atributo `data-morph="a\|b\|c"` no `index.html` (cada alternativa não pode ser mais larga que a linha mais longa do título); tempos em `js/animations/text-effects.js` |
 
-**Leveza no celular:** rolagem nativa no toque (`smoothTouch: false`; na roda do mouse, suavização de 0,75 s);
-hero em 2D no celular/tablet (não baixa o Three.js); no computador o 3D renderiza no máximo a 1,5× de densidade;
-água dos modais em imagem pequena movida por `transform`; desfoque dos títulos limitado; letreiro de clientes
-parado fora da tela; fotos com versão menor (`srcset`) para telas estreitas; trechos fixados mais curtos no celular.
+**Leveza no celular:** no toque, suavização mínima (`smoothTouch: 0.1`) — com a rolagem nativa pura
+(`smoothTouch: false`) o celular rola as seções fixas fora de sincronia e elas pulam; na roda do mouse, 0,75 s.
+O carrossel de serviços só encaixa (snap) com mouse; no toque ele não briga com o embalo do dedo.
+Hero em 2D no celular/tablet (não baixa o Three.js); no computador o 3D renderiza no máximo a 1,5× de densidade;
+água dos modais em imagem pequena movida por `transform` (a camada anda só um período da textura);
+nada lê o layout a cada quadro (medidas no refresh, variáveis CSS escritas direto no estilo); sem o recorte
+das seções ao entrar no celular; desfoque dos títulos limitado; letreiro de clientes parado fora da tela;
+fotos com versão menor (`srcset`) para telas estreitas; trechos fixados mais curtos no celular.
 
 **Robustez:** a tela de entrada some sozinha em 9 s se algo falhar. Sem WebGL, o mesmo movimento roda no vetor 2D.
 Com `prefers-reduced-motion`, sem JS ou sem acesso ao CDN, o site fica no estado estático completo.

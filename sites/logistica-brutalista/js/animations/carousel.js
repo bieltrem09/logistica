@@ -6,7 +6,8 @@
  *   saindo   → escala 1 → 0.96, escurece, inclina no máximo 1,5°
  *   entrando → escala 1.04 → 1, opacidade sobe, desce alguns px até o lugar
  * O texto de cada contêiner anda um pouco atrás da caixa (profundidade) e o
- * contador do HUD rola para o novo número. Encaixa em cada contêiner (snap).
+ * contador do HUD rola para o novo número. Com mouse, encaixa em cada contêiner (snap);
+ * no toque não, para o encaixe não brigar com o embalo do dedo.
  */
 import { q, qa, clamp } from './utils.js';
 
@@ -23,6 +24,10 @@ export function initContainerCarousel({ smoother }) {
   const trolley = q('.yard-hud__trolley', pinEl);
   const stepW = () => cards[1].offsetLeft - cards[0].offsetLeft;
   let current = 0;
+  let travel = 0; // percurso do carrinho no trilho do HUD, medido só no refresh
+  const measure = () => {
+    travel = rail.offsetWidth - trolley.offsetWidth;
+  };
 
   gsap.set(cards, { transformOrigin: '50% -20%' });
   const focus = (p) => {
@@ -36,8 +41,9 @@ export function initContainerCarousel({ smoother }) {
         rotation: leaving ? -1.5 * ad : 1.8 * ad,
         y: leaving ? 0 : -14 * ad,
         opacity: leaving ? 1 - 0.5 * ad : 1 - 0.65 * ad,
-        '--focus': clamp(1 - Math.abs(d) * 1.8, 0, 1),
       });
+      // variável CSS direto no estilo: pelo gsap.set ela seria lida do estilo calculado a cada quadro
+      card.style.setProperty('--focus', clamp(1 - Math.abs(d) * 1.8, 0, 1).toFixed(3));
       gsap.set(names[i], { x: clamp(-d, -1, 1) * 36 });
     });
     const next = Math.round(f);
@@ -47,7 +53,7 @@ export function initContainerCarousel({ smoother }) {
       idx.textContent = String(next + 1).padStart(2, '0');
       gsap.fromTo(idx, { yPercent: 70 * dir, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.35, ease: 'power3.out', overwrite: true });
     }
-    gsap.set(trolley, { x: (rail.offsetWidth - trolley.offsetWidth) * p });
+    gsap.set(trolley, { x: travel * p });
   };
 
   const st = ScrollTrigger.create({
@@ -58,10 +64,14 @@ export function initContainerCarousel({ smoother }) {
     scrub: true,
     animation: gsap.to(yard, { x: () => -stepW() * (n - 1), ease: 'none' }),
     invalidateOnRefresh: true,
-    snap: { snapTo: 1 / (n - 1), inertia: false, duration: { min: 0.25, max: 0.6 }, delay: 0.1, ease: 'power2.inOut' },
+    snap: ScrollTrigger.isTouch === 1 ? false : { snapTo: 1 / (n - 1), inertia: false, duration: { min: 0.25, max: 0.6 }, delay: 0.15, ease: 'power2.inOut' },
     onUpdate: (self) => focus(self.progress),
-    onRefresh: (self) => focus(self.progress),
+    onRefresh: (self) => {
+      measure();
+      focus(self.progress);
+    },
   });
+  measure();
   focus(0);
   pinEl.dataset.cursor = 'Role →';
 

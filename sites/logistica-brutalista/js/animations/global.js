@@ -2,7 +2,7 @@
  * Camada comum: cabeçalhos de seção, blocos que sobem, seções escuras que
  * "encaixam" ao entrar, cursor/magnético e âncoras com rolagem suave.
  */
-import { q, qa } from './utils.js';
+import { q, qa, isLightDevice } from './utils.js';
 
 const { gsap, ScrollTrigger } = window;
 
@@ -31,6 +31,8 @@ export function initFadeUps() {
 }
 
 export function initSectionEntrances() {
+  // Recortar a seção inteira redesenha a seção a cada quadro: no celular fica de fora
+  if (isLightDevice()) return;
   qa('#modais, #numeros, #clientes, #rastreamento, #contato, .site-footer').forEach((sec) => {
     gsap.fromTo(
       sec,

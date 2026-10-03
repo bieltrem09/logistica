@@ -178,7 +178,10 @@ export function initLogisticsJourney({ smoother }) {
       t: 0, // progresso do veículo na rota
       line: 0, // rota feita além do veículo (a carga segue até o nó no transbordo)
       draw: 0, // quanto da rota planejada já foi desenhado
+      bgx: 0, // quanto a água (e as faixas da estrada) já correu, em px
       lastAngle: null,
+      drawn: null, // estado já desenhado: render() pula a faixa que não mudou
+      drawnBgx: null,
     };
   });
   const [mar, terra, ar] = strips;
@@ -208,7 +211,10 @@ export function initLogisticsJourney({ smoother }) {
       s.t = 0;
       s.line = 0;
       s.k = 1;
+      s.bgx = 0;
       s.lastAngle = null;
+      s.drawn = null;
+      s.drawnBgx = null;
     });
   };
 
@@ -220,14 +226,28 @@ export function initLogisticsJourney({ smoother }) {
     strips.forEach((s) => {
       s.route.measure(stripW / H);
       s.size = { w: s.veh.offsetWidth, h: s.veh.offsetHeight, strip: stripW, tag: s.layer.tag.offsetWidth };
+      s.drawn = null; // medidas novas: redesenha tudo
     });
   };
 
   /** Posiciona cada veículo na sua rota e atualiza rota feita e telemetria. */
   const SPEED = { mar: [18, 2], terra: [80, 2], ar: [850, 3] };
   const DIST = { mar: 412, terra: 1240, ar: 10000 };
+  // A textura da água se repete a cada 480 px e as faixas da estrada a cada 86 px: a camada
+  // só precisa andar um período (é mais estreita, mais leve na memória do celular)
+  const wrapWater = gsap.utils.wrap(-480, 0);
+  const wrapDash = gsap.utils.wrap(-86, 0);
   const render = () => {
     strips.forEach((s) => {
+      if (s.bgx !== s.drawnBgx) {
+        s.drawnBgx = s.bgx;
+        s.bg.style.setProperty('--bgx', `${wrapWater(s.bgx).toFixed(1)}px`);
+        s.bg.style.setProperty('--rx', `${wrapDash(s.bgx).toFixed(1)}px`);
+      }
+      // Só a faixa que andou é redesenhada (no celular, uma de cada vez)
+      const state = `${s.t}|${s.k}|${s.draw}|${s.line}`;
+      if (state === s.drawn) return;
+      s.drawn = state;
       const { route, layer } = s;
       const p = route.at(s.t);
       const ahead = route.at(Math.min(1, s.t + 0.02));
@@ -253,8 +273,10 @@ export function initLogisticsJourney({ smoother }) {
       // Velocidade: sobe na partida e cai na chegada (como o easing do trajeto)
       const v = Math.sin(Math.PI * clamp(s.t * 1.04, 0, 1)) ** 0.7;
       const [max, pad] = SPEED[s.key];
-      s.speed.textContent = fmt(Math.round(max * v), pad);
-      s.dist.textContent = fmt(Math.round(DIST[s.key] * s.t));
+      const speed = fmt(Math.round(max * v), pad);
+      const dist = fmt(Math.round(DIST[s.key] * s.t));
+      if (s.speed.textContent !== speed) s.speed.textContent = speed;
+      if (s.dist.textContent !== dist) s.dist.textContent = dist;
 
       if (s.kind === 'ship') {
         gsap.set(s.wake, { scaleY: 0.45 + 1.4 * v, opacity: 0.35 + 0.65 * v });
@@ -268,7 +290,7 @@ export function initLogisticsJourney({ smoother }) {
       } else {
         // Avião: sobe (cresce, sombra se afasta) e inclina nas curvas
         const climb = gsap.parseEase('power2.inOut')(clamp((s.t - 0.12) / 0.7, 0, 1));
-        gsap.set(s.veh, { '--alt': 6 + climb * 110 });
+        s.veh.style.setProperty('--alt', (6 + climb * 110).toFixed(1));
         const k = 0.62 + climb * 0.4;
         gsap.set(s.img, { scaleY: k, scaleX: k * (1 - Math.min(Math.abs(bend) * 0.02, 0.1)) });
       }
@@ -344,7 +366,7 @@ export function initLogisticsJourney({ smoother }) {
       .to(mar.tel, { opacity: 1, duration: 0.3 }, 2.1)
       .to([mar.veh, mar.layer.tag], { autoAlpha: 1, duration: 0.05 }, 2.4)
       .to(mar, { t: 0.9, duration: 2.8, ease: 'power1.inOut' }, 2.4)
-      .to(mar.bg, { '--bgx': '-640px', duration: 3.6 }, 1.6);
+      .to(mar, { bgx: -640, duration: 3.6 }, 1.6);
 
     // TRANSBORDO — a carga sai do navio e continua por terra
     tl.addLabel('transbordo', 5.2)
@@ -370,7 +392,7 @@ export function initLogisticsJourney({ smoother }) {
     // TERRA — o caminhão acelera pela estrada e chega ao terminal
     tl.addLabel('terra', 6.3)
       .to(terra, { t: 0.92, duration: 2.7, ease: 'power2.inOut' }, 6.3)
-      .to(terra.bg, { '--bgx': '-1400px', duration: 3.6 }, 5.4);
+      .to(terra, { bgx: -1400, duration: 3.6 }, 5.4);
 
     // EMBARQUE — terra → ar
     tl.addLabel('embarque', 9)
@@ -397,7 +419,7 @@ export function initLogisticsJourney({ smoother }) {
     tl.addLabel('ar', 10.1)
       .to(ar, { t: 1, duration: 2.8, ease: 'power2.inOut' }, 10.1)
       .fromTo(ar.clouds, { xPercent: 12 }, { xPercent: -20, duration: 3.4 }, 9.7)
-      .to(ar.bg, { '--bgx': '-600px', duration: 3.6 }, 9.2);
+      .to(ar, { bgx: -600, duration: 3.6 }, 9.2);
 
     // CHEGADA + FINAL — a câmera se afasta: o mapa inteiro com a rota completa
     tl.addLabel('final', 12.9)
@@ -473,7 +495,7 @@ export function initLogisticsJourney({ smoother }) {
     tl.to(strips.map((s) => s.tel), { opacity: 1, duration: 0.3 }, 0.3)
       .to([mar.veh, mar.layer.tag], { autoAlpha: 1, duration: 0.05 }, 0.7)
       .to(mar, { t: 1, duration: 2.2, ease: 'power1.inOut' }, 0.7)
-      .to(mar.bg, { '--bgx': '-600px', duration: 3 }, 0)
+      .to(mar, { bgx: -600, duration: 3 }, 0)
       .to(mar.cargo, { scale: 1.5, autoAlpha: 0, duration: 0.3 }, 2.9)
       .to([mar.veh, mar.layer.tag], { autoAlpha: 0, duration: 0.3 }, 3);
 
@@ -482,7 +504,7 @@ export function initLogisticsJourney({ smoother }) {
     tl.fromTo(terra.cargo, { scale: 1.5, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.3 }, 3.5)
       .to([terra.veh, terra.layer.tag], { autoAlpha: 1, duration: 0.05 }, 3.4)
       .to(terra, { t: 1, duration: 2.2, ease: 'power2.inOut' }, 3.8)
-      .to(terra.bg, { '--bgx': '-1200px', duration: 3 }, 3)
+      .to(terra, { bgx: -1200, duration: 3 }, 3)
       .to([terra.veh, terra.layer.tag], { autoAlpha: 0, duration: 0.3 }, 6);
 
     tl.addLabel('ar', 6);
