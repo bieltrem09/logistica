@@ -30,21 +30,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 
+  <link rel="preload" as="image" href="assets/img/hero-sky.webp" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="css/style.css">
 
   <!-- Entrada: liga a tela de carregamento antes do primeiro paint (some sozinha se o JS falhar) -->
   <script>
     (function () {
       var d = document.documentElement;
-      // Fontes: o título do hero (e, atrás da porta de enrolar, a página) só aparece com a fonte
-      // certa. Sem troca de fonte visível, nada pula (layout shift). No máximo 3 s de espera.
-      d.classList.add('fonts-wait');
-      var fontsDone = function () { d.classList.remove('fonts-wait'); };
-      setTimeout(fontsDone, 3000);
-      if (document.fonts && document.fonts.load) {
-        Promise.all(['400 1em Anton', '400 1em "Inter Tight"', '400 1em "JetBrains Mono"'].map(function (f) { return document.fonts.load(f); })).then(fontsDone, fontsDone);
-      } else fontsDone();
-
       if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       d.classList.add('is-loading');
       window.__vetorLoadTimer = setTimeout(function () { d.classList.remove('is-loading'); }, 9000);
@@ -231,9 +223,11 @@
         <!-- ═════════ HERO ═════════ -->
         <section class="hero" id="inicio" data-theme="dark" aria-labelledby="hero-title">
           <!-- Camada 1: céu -->
-          <!-- Foto de céu opcional: <img src="assets/img/hero-sky.webp" width="2560" height="1440" alt="" fetchpriority="high" decoding="async"> (sem ela, gradiente do CSS) -->
-          <div class="hero__sky media" data-anim="parallax" data-speed="0.6"></div>
+          <div class="hero__sky media" data-anim="parallax" data-speed="0.6">
+            <img src="assets/img/hero-sky.webp" width="2560" height="1440" alt="" fetchpriority="high" decoding="async">
+          </div>
           <div class="hero__shade" aria-hidden="true"></div>
+          <div class="hero__dim" aria-hidden="true"></div>
 
           <!-- Camada 2: tipografia gigante -->
           <h1 class="hero__title display" id="hero-title" data-anim="split-text" data-speed="0.85">
@@ -249,56 +243,24 @@
             </span>
           </h1>
 
-          <!-- Telemetria do guindaste (só com animação): prumo, altura até o pátio e alvo de pouso -->
-          <svg class="hero__hud" aria-hidden="true" focusable="false">
-            <line class="hud__plumb" x1="0" y1="0" x2="0" y2="0"/>
-            <path class="hud__target" d="M0 0"/>
-            <text class="hud__alt">ALT 00,0 m</text>
-            <text class="hud__dock" text-anchor="end">Doca 07 · Pátio A</text>
-          </svg>
-
-          <!-- Guindaste (só com animação): a lança basculante que segura o cabo e desce com a rolagem.
-               Foto recortada (lança vindo do alto à esquerda) + gancho auxiliar em camada própria, que balança.
-               Pontos de encaixe em --crane-ax/--crane-ay (css/style.css). Sem a foto, roda o vetor. -->
-          <div class="hero__crane" aria-hidden="true">
-            <div class="hero__crane-body media">
-              <img class="hero__crane-img" src="assets/img/hero-guindaste.webp" width="734" height="738" alt="" decoding="async">
-              <img class="hero__crane-hook" src="assets/img/hero-guindaste-gancho.webp" width="85" height="284" alt="" decoding="async">
-              <svg class="media__fallback hero__crane-svg" viewBox="0 0 2400 160" preserveAspectRatio="xMaxYMid meet" focusable="false">
-                <defs>
-                  <pattern id="crane-lattice" width="120" height="76" patternUnits="userSpaceOnUse">
-                    <path d="M0 0 60 76 120 0" fill="none" stroke="#C99700" stroke-width="9"/>
-                    <path d="M0 0 60 76 120 0" fill="none" stroke="#0C0C0C" stroke-width="2" opacity=".35"/>
-                  </pattern>
-                  <pattern id="crane-hazard" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                    <rect width="28" height="28" fill="#F2C200"/>
-                    <rect width="14" height="28" fill="#0C0C0C"/>
-                  </pattern>
-                </defs>
-                <rect x="0" y="32" width="2252" height="76" fill="url(#crane-lattice)"/>
-                <g fill="#F2C200" stroke="#0C0C0C" stroke-width="3">
-                  <rect x="-4" y="18" width="2256" height="14"/>
-                  <rect x="-4" y="108" width="2256" height="16"/>
-                </g>
-                <g fill="#D9AA00" stroke="#0C0C0C" stroke-width="2">
-                  <rect x="476" y="32" width="10" height="76"/><rect x="956" y="32" width="10" height="76"/>
-                  <rect x="1436" y="32" width="10" height="76"/><rect x="1916" y="32" width="10" height="76"/>
-                </g>
-                <rect x="1560" y="44" width="380" height="50" fill="#0C0C0C"/>
-                <text x="1750" y="77" text-anchor="middle" fill="#EDE8DF" font-family="JetBrains Mono, monospace" font-size="24" letter-spacing="3">VTR-GQ 07 · SWL 40 t</text>
-                <path d="M2248 10 2328 26 2368 92 2336 140 2248 132Z" fill="#F2C200" stroke="#0C0C0C" stroke-width="4"/>
-                <rect x="2252" y="20" width="34" height="106" fill="url(#crane-hazard)"/>
-                <circle cx="2340" cy="110" r="26" fill="#0C0C0C"/>
-                <circle cx="2340" cy="110" r="10" fill="#8A8F94"/>
-              </svg>
-            </div>
+          <!-- Camada 2b (só com animação): rota de chegada, ponto de descarga, prumo e rota de saída -->
+          <div class="hero__fx" aria-hidden="true">
+            <svg class="hero__fx-svg" preserveAspectRatio="none" focusable="false">
+              <path class="hero__route hero__route--plan"/>
+              <path class="hero__route hero__route--in" pathLength="1"/>
+              <path class="hero__route hero__route--out" pathLength="1"/>
+              <line class="hero__guide"/>
+            </svg>
+            <span class="hero__target"></span>
+            <span class="hero__alt micro">Altura <b>0,0</b> m</span>
+            <span class="hero__node hero__node--drop micro">Santos · SP</span>
+            <span class="hero__node hero__node--end micro">27 UF →</span>
           </div>
 
           <!-- Camada 3: contêiner suspenso (PNG recortado, com vetor de reserva) -->
           <div class="hero__cargo media" data-anim="parallax" data-speed="1.15">
             <span class="hero__cable" aria-hidden="true"></span>
-            <!-- data-*: pontos da foto em frações (cabo no moitão, silhueta, área toda opaca que cobre a tela) -->
-            <img class="hero__cargo-img" src="assets/img/hero-container.webp" width="1745" height="1416" alt="Contêiner vermelho suspenso pelo moitão de um guindaste" decoding="async" fetchpriority="high" data-hook="0.5569 0.0277" data-box="0.0044 0.057 0.9956 0.9553" data-cover="0.355 0.3513 0.7125 0.6263">
+            <img class="hero__cargo-img" src="assets/img/hero-container.png" width="2000" height="1560" alt="Contêiner laranja da VETOR suspenso por cabos de aço" decoding="async" fetchpriority="high">
             <svg class="media__fallback hero__cargo-svg" viewBox="0 0 1000 780" role="img" aria-label="Contêiner laranja da VETOR suspenso por cabos de aço">
               <defs>
                 <pattern id="cnt-ribs" width="40" height="10" patternUnits="userSpaceOnUse">
@@ -410,8 +372,8 @@
             </div>
 
             <figure class="about__figure" data-anim="reveal-img">
-              <div class="about__media media media--photo" data-label="sobre-patio.webp · 1024×687">
-                <img src="assets/img/sobre-patio.webp" width="1024" height="687" loading="lazy" decoding="async" alt="Dois operadores de capacete e colete caminhando entre pilhas de contêineres no pátio" data-anim="parallax" data-speed="0.92">
+              <div class="about__media media media--photo" data-label="sobre-patio.webp · 1600×1067">
+                <img src="assets/img/sobre-patio.webp" width="1600" height="1067" loading="lazy" decoding="async" alt="Equipe da VETOR, de capacete e colete, caminhando entre pilhas de contêineres no pátio" data-anim="parallax" data-speed="0.92">
               </div>
               <figcaption class="about__caption micro">
                 <span>Fig. 01</span><span>Pátio próprio · Santos/SP</span><span>Operação 24/7</span>
@@ -437,24 +399,15 @@
 
           <!-- Pronto para pin + scroll horizontal -->
           <div class="modais__pin" data-anim="pin">
-            <!-- O contêiner do hero, trocando de veículo entre os capítulos (só com animação) -->
-            <div class="journey-cargo" aria-hidden="true"><span class="journey-cargo__box"></span><span class="journey-cargo__id micro">VTRU 204816-3</span></div>
             <div class="modais__track" data-anim="horizontal">
 
               <article class="modal-strip modal-strip--mar" data-theme="blue" aria-labelledby="modal-mar">
-                <!-- Foto opcional: <img src="assets/img/modal-mar.webp" width="1200" height="2000" alt="" loading="lazy" decoding="async"> dentro do bloco abaixo -->
-                <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9"></div>
-                <svg class="modal-strip__route" aria-hidden="true" focusable="false">
-                  <path class="route__plan" d="M0 0"/>
-                  <path class="route__done" d="M0 0"/>
-                  <path class="route__dot" d="M0 0"/>
-                  <path class="route__dot route__dot--end" d="M0 0"/>
-                  <text class="route__label">Alto-mar · Rumo 312°</text>
-                  <text class="route__label">Porto de Santos · Cais 3</text>
-                </svg>
+                <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9">
+                  <img src="assets/img/modal-mar.webp" width="1200" height="2000" alt="" loading="lazy" decoding="async">
+                </div>
                 <div class="modal-strip__vehicle modal-strip__vehicle--ship" data-anim="parallax" data-speed="1.08">
                   <span class="vehicle__wake" aria-hidden="true"></span>
-                  <img src="assets/img/fallback/navio.svg" width="260" height="1100" alt="" loading="lazy" decoding="async">
+                  <img src="assets/img/veiculo-navio.png" data-fallback="assets/img/fallback/navio.svg" width="260" height="1100" alt="" loading="lazy" decoding="async">
                 </div>
                 <p class="modal-strip__tab" aria-hidden="true">01 · Mar</p>
                 <p class="modal-strip__tel micro" aria-hidden="true"><span>Velocidade <b data-tel="speed" data-max="18">00</b> nós</span><span>Percorrido <b data-tel="dist" data-max="412">000</b> mn</span></p>
@@ -476,16 +429,8 @@
                 <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9">
                   <img src="assets/img/modal-terra.webp" width="1125" height="2000" alt="" loading="lazy" decoding="async">
                 </div>
-                <svg class="modal-strip__route" aria-hidden="true" focusable="false">
-                  <path class="route__plan" d="M0 0"/>
-                  <path class="route__done" d="M0 0"/>
-                  <path class="route__dot" d="M0 0"/>
-                  <path class="route__dot route__dot--end" d="M0 0"/>
-                  <text class="route__label">Cais 3 · Coleta</text>
-                  <text class="route__label">GRU · Terminal de cargas</text>
-                </svg>
                 <div class="modal-strip__vehicle modal-strip__vehicle--truck" data-anim="parallax" data-speed="1.12">
-                  <img src="assets/img/fallback/caminhao.svg" width="130" height="780" alt="" loading="lazy" decoding="async">
+                  <img src="assets/img/veiculo-caminhao.png" data-fallback="assets/img/fallback/caminhao.svg" width="130" height="780" alt="" loading="lazy" decoding="async">
                 </div>
                 <p class="modal-strip__tab" aria-hidden="true">02 · Terra</p>
                 <p class="modal-strip__tel micro" aria-hidden="true"><span>Velocidade <b data-tel="speed" data-max="80">00</b> km/h</span><span>Percorrido <b data-tel="dist" data-max="1240">0000</b> km</span></p>
@@ -504,19 +449,12 @@
               </article>
 
               <article class="modal-strip modal-strip--ar" data-theme="light" aria-labelledby="modal-ar">
-                <!-- Foto opcional: <img src="assets/img/modal-ar.webp" width="1200" height="2000" alt="" loading="lazy" decoding="async"> dentro do bloco abaixo -->
-                <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9"></div>
-                <svg class="modal-strip__route" aria-hidden="true" focusable="false">
-                  <path class="route__plan" d="M0 0"/>
-                  <path class="route__done" d="M0 0"/>
-                  <path class="route__dot" d="M0 0"/>
-                  <path class="route__dot route__dot--end" d="M0 0"/>
-                  <text class="route__label">GRU · Pista 09L</text>
-                  <text class="route__label">Destino · Manaus/AM</text>
-                </svg>
+                <div class="modal-strip__bg media" data-anim="parallax" data-speed="0.9">
+                  <img src="assets/img/modal-ar.webp" width="1200" height="2000" alt="" loading="lazy" decoding="async">
+                </div>
                 <span class="modal-strip__clouds" aria-hidden="true"></span>
                 <div class="modal-strip__vehicle modal-strip__vehicle--plane" data-anim="parallax" data-speed="1.2">
-                  <img src="assets/img/fallback/aviao.svg" width="800" height="800" alt="" loading="lazy" decoding="async">
+                  <img src="assets/img/veiculo-aviao.png" data-fallback="assets/img/fallback/aviao.svg" width="800" height="800" alt="" loading="lazy" decoding="async">
                 </div>
                 <p class="modal-strip__tab" aria-hidden="true">03 · Ar</p>
                 <p class="modal-strip__tel micro" aria-hidden="true"><span>Velocidade <b data-tel="speed" data-max="850">000</b> km/h</span><span>Altitude <b data-tel="dist" data-max="10000">00000</b> m</span></p>
@@ -553,8 +491,8 @@
               <h2 class="cut-title__word display" id="servicos-title" data-anim="split-text">
                 <span class="line"><span class="line__inner">Serviços</span></span>
               </h2>
-              <figure class="cut-title__media media media--photo" data-anim="reveal-img" data-label="servicos-navio.webp · 1024×617">
-                <img src="assets/img/servicos-navio.webp" width="1024" height="617" fetchpriority="low" decoding="async" alt="Navio porta-contêineres visto de cima, navegando em alto-mar" data-anim="parallax" data-speed="0.9">
+              <figure class="cut-title__media media media--photo" data-anim="reveal-img" data-label="servicos-navio.webp · 2000×1200">
+                <img src="assets/img/servicos-navio.webp" width="2000" height="1200" loading="lazy" decoding="async" alt="Navio porta-contêineres navegando em alto-mar" data-anim="parallax" data-speed="0.9">
               </figure>
               <p class="cut-title__word cut-title__word--ghost display" aria-hidden="true">
                 <span class="line"><span class="line__inner">Serviços</span></span>

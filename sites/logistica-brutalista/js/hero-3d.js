@@ -1,7 +1,11 @@
 /**
  * Contêiner 3D do hero (Three.js).
  * Recebe a pose da física (js/hero-rig.js) e desenha: cabo principal, gancho,
- * quatro lingas e a caixa com texturas em canvas. Na fase de aproximação o
+ * quatro lingas e a caixa com texturas em canvas. Hierarquia = estrutura física:
+ *   rig  (gancho: segue o cabo, balança e gira)
+ *   └ hang (carga: atrasa em ângulo e em altura em relação ao gancho)
+ *     └ body (caixa + arestas)
+ * As lingas ligam o gancho aos cantos da carga e esticam com a folga. Na fase de aproximação o
  * contêiner gira e vem até a câmera até a face das portas cobrir a tela inteira,
  * no mesmo enquadramento "cover" usado pelas portas em DOM da transição.
  */
@@ -47,9 +51,11 @@ export function createHero3D({ canvas, textures }) {
   );
 
   const rig = new THREE.Group();
+  const hang = new THREE.Group();
   const body = new THREE.Group();
   body.add(box, edges);
-  rig.add(body);
+  hang.add(body);
+  rig.add(hang);
   scene.add(rig);
 
   const steel = new THREE.MeshLambertMaterial({ color: 0x141414 });
@@ -69,11 +75,8 @@ export function createHero3D({ canvas, textures }) {
   // Estado de layout (mundo)
   let G = null;
   let k = 1;
-  let hookY = 0;
   const target = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
 
-  const tmpA = new THREE.Vector3();
-  const tmpB = new THREE.Vector3();
   const tmpDir = new THREE.Vector3();
   const qPhys = new THREE.Quaternion();
   const qa = new THREE.Quaternion();
@@ -81,6 +84,11 @@ export function createHero3D({ canvas, textures }) {
   const pivot = new THREE.Vector3();
   const tagLocal = new THREE.Vector3(0.5, 0.25, 0.5);
   const tagWorld = new THREE.Vector3();
+  const baseLocal = new THREE.Vector3(0, -0.5, 0);
+  const origin = new THREE.Vector3();
+  const corners = Array.from({ length: 4 }, () => new THREE.Vector3());
+  const cornerTmp = new THREE.Vector3();
+  let slingR = 0;
 
   const toWorld = (out, x, y, z = 0) => out.set((x - G.W / 2) * k, (G.H / 2 - y) * k, z * k);
 
@@ -111,17 +119,15 @@ export function createHero3D({ canvas, textures }) {
     edges.scale.set(l, h, d);
     body.position.set(0, -(sling + h / 2), 0);
 
-    const corners = [
+    [
       [-0.47 * l, -sling, -0.43 * d],
       [0.47 * l, -sling, -0.43 * d],
       [-0.47 * l, -sling, 0.43 * d],
       [0.47 * l, -sling, 0.43 * d],
-    ];
-    tmpA.set(0, 0, 0);
-    corners.forEach((c, i) => placeCylinder(slings[i], tmpA, tmpB.set(...c), 0.0028 * G.w * k));
+    ].forEach((c, i) => corners[i].set(...c));
+    slingR = 0.0028 * G.w * k;
     hookBlock.scale.set(0.05 * G.w * k, 0.062 * G.w * k, 0.034 * G.w * k);
-    hookY = 0.044 * G.w * k;
-    hookBlock.position.set(0, hookY, 0);
+    hookBlock.position.set(0, 0.044 * G.w * k, 0);
     ring.scale.setScalar(0.011 * G.w * k);
     ring.position.set(0, 0.002 * G.w * k, 0);
 
@@ -144,19 +150,18 @@ export function createHero3D({ canvas, textures }) {
     qPhys.setFromAxisAngle(axisZ, pose.theta);
     qPhys.multiply(qa.setFromAxisAngle(axisX, -pose.phi));
     qPhys.multiply(qa.setFromAxisAngle(Y, pose.psi));
-    qPhys.multiply(qa.setFromAxisAngle(axisZ, pose.alpha));
 
     rig.position.lerpVectors(physPos, target.pos, a);
     rig.quaternion.slerpQuaternions(qPhys, target.quat, a);
 
-    toWorld(pivot, pose.tx, pose.py, pose.tz); // ponta da lança do guindaste
-    placeCylinder(mainCable, pivot, rig.position, 0.0042 * G.w * k);
+    // Movimento secundário: a carga atrasa em relação ao gancho e as lingas esticam
+    hang.quaternion.setFromAxisAngle(axisZ, pose.alpha * (1 - a));
+    hang.position.set(0, -pose.sy * k * (1 - a), 0);
+    hang.updateMatrix();
+    corners.forEach((c, i) => placeCylinder(slings[i], origin, cornerTmp.copy(c).applyMatrix4(hang.matrix), slingR));
 
-    // Movimento secundário: o gancho segue o cabo; lingas e contêiner atrasam (alpha) em relação a ele
-    const lag = pose.alpha * (1 - a);
-    hookBlock.position.set(0, hookY, 0).applyAxisAngle(axisZ, -lag);
-    hookBlock.quaternion.setFromAxisAngle(axisZ, -lag);
-    ring.quaternion.setFromAxisAngle(axisZ, -lag);
+    toWorld(pivot, pose.tx, G.pivotY, pose.tz);
+    placeCylinder(mainCable, pivot, rig.position, 0.0042 * G.w * k);
 
     // As portas ficam com a cor exata da textura quando cobrem a tela
     doorMat.color.setScalar(0.8 + 0.2 * a);
@@ -164,24 +169,22 @@ export function createHero3D({ canvas, textures }) {
     renderer.render(scene, camera);
   }
 
-  /** Ponto da etiqueta técnica (canto direito do contêiner), em px do hero. */
-  function tagPoint() {
-    if (!G) return null;
-    tagWorld.copy(tagLocal);
+  /** Projeta um ponto da caixa (coordenadas unitárias) em px do hero. */
+  function project(local) {
+    tagWorld.copy(local);
     box.localToWorld(tagWorld);
     tagWorld.project(camera);
     return { x: ((tagWorld.x + 1) / 2) * G.W, y: ((1 - tagWorld.y) / 2) * G.H };
   }
 
-  /** Centro da base do contêiner, em px do hero (prumo da telemetria). */
-  const baseLocal = new THREE.Vector3(0, -0.5, 0);
-  const baseWorld = new THREE.Vector3();
+  /** Ponto da etiqueta técnica (canto direito do contêiner), em px do hero. */
+  function tagPoint() {
+    return G ? project(tagLocal) : null;
+  }
+
+  /** Centro da base do contêiner, em px do hero (início da linha de prumo). */
   function basePoint() {
-    if (!G) return null;
-    baseWorld.copy(baseLocal);
-    box.localToWorld(baseWorld);
-    baseWorld.project(camera);
-    return { x: ((baseWorld.x + 1) / 2) * G.W, y: ((1 - baseWorld.y) / 2) * G.H };
+    return G ? project(baseLocal) : null;
   }
 
   function dispose() {

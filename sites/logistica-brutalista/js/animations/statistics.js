@@ -1,60 +1,46 @@
 /**
- * Números da operação: contadores precisos (sem dígitos girando ao acaso).
+ * NÚMEROS — dados da operação.
  *
- * Valores grandes sobem por ordem de grandeza (0 → 1 → 12 → 120 → 1.200 → 12.000),
- * valores pequenos e porcentagens sobem em linha com desaceleração (0% → 42% → 98,7%).
- * A largura do número fica travada no valor final, então nada empurra o layout.
- * Leitores de tela recebem só o valor final.
+ * O título cai com peso ("Peso pesado.") e desliza leve ("Prazo leve.").
+ * Cada número conta de 0 até o valor real, sem saltos aleatórios:
+ *   - milhares contam em escala logarítmica, passando por cada ordem de grandeza
+ *     (0 → 1 → 12 → 120 → 1.200 → 12.000) e desaceleram no fim;
+ *   - porcentagens e números pequenos contam em linha reta com easing de saída
+ *     (0 → 15 → 42 → 78 → 98,7);
+ *   - "24/7" conta as duas partes.
+ * A largura final é reservada para os sufixos (%, m², anos) não andarem.
+ * Leitores de tela recebem o valor final desde o início.
  */
-import { q, qa, fmt } from './utils.js';
-import { maskLines, splitInner, labelFromText } from './text.js';
+import { q, qa, fmt, maskLines, splitInner, labelFromText } from './utils.js';
 
 const { gsap } = window;
 
-/** Anima um número dentro de `el` até `to`. Devolve o tween (pausado se `paused`). */
-export function countUp(el, { to, decimals = 0, pad = 0, group = true, duration = 2.2, ease = 'power3.out', mode = 'auto', paused = false } = {}) {
-  const final = fmt(to, { decimals, pad, group });
-  el.textContent = final;
-  el.style.display = 'inline-block';
-  el.style.minWidth = `${el.getBoundingClientRect().width}px`;
-  const log = mode === 'log' || (mode === 'auto' && to >= 1000 && decimals === 0);
-  const o = { t: 0 };
-  const render = () => {
-    const v = log ? Math.pow(to + 1, o.t) - 1 : to * o.t;
-    el.textContent = fmt(o.t >= 1 ? to : decimals ? v : Math.floor(v), { decimals, pad, group });
-  };
-  render();
-  return gsap.to(o, { t: 1, duration, ease, paused, onUpdate: render });
-}
-
-/** Troca o texto por contadores: "+12.000" → [12000], "24/7" → [24, 7]. */
-export function prepareCounters(el) {
+/** Transforma o texto do contador em partes numéricas animáveis. */
+function buildCounter(el) {
   const text = el.textContent.trim();
-  const dataCount = el.dataset.count;
-  el.innerHTML = `<span class="sr-only">${text}</span><span class="count" aria-hidden="true"></span>`;
-  const out = q('.count', el);
-  const parts = dataCount
-    ? [{ num: Number(dataCount), decimals: Number(el.dataset.decimals || 0) }]
-    : text.split(/(\d+(?:[.,]\d+)?)/).map((chunk) => {
-        if (!/^\d/.test(chunk)) return { text: chunk };
-        // zeros à esquerda só quando o texto original já tem ("0012"), nunca em "24/7"
-        const pad = chunk.startsWith('0') ? chunk.length : 0;
-        return { num: Number(chunk.replace(/\./g, '').replace(',', '.')), decimals: (chunk.split(',')[1] || '').length, pad };
-      });
-  return parts
+  el.setAttribute('aria-label', text);
+  const parts = text.split(/(\d+(?:\.\d{3})*(?:,\d+)?)/).filter(Boolean);
+  el.innerHTML = parts
     .map((part) => {
-      const span = document.createElement('span');
-      out.append(span);
-      if (part.text !== undefined) {
-        span.textContent = part.text;
-        return null;
-      }
-      return { span, ...part };
+      if (!/^\d/.test(part)) return `<span class="count__sep" aria-hidden="true">${part}</span>`;
+      const decimals = (part.split(',')[1] || '').length;
+      const value = Number(part.replace(/\./g, '').replace(',', '.'));
+      return `<span class="count__num" aria-hidden="true" data-value="${value}" data-decimals="${decimals}">${part}</span>`;
     })
-    .filter(Boolean);
+    .join('');
+  return qa('.count__num', el).map((node) => ({
+    node,
+    value: Number(node.dataset.value),
+    decimals: Number(node.dataset.decimals),
+  }));
 }
 
-/** 04 Números: "PESO PESADO." cai com peso, "PRAZO LEVE." desliza; contadores com precisão. */
+/** Valor exibido para o tempo t (0–1) da contagem. */
+function valueAt({ value }, t) {
+  if (value >= 1000) return (value + 1) ** gsap.parseEase('power2.out')(t) - 1; // uma ordem de grandeza por vez
+  return value * gsap.parseEase('power3.out')(t);
+}
+
 export function initStatistics() {
   const title = q('.numbers__title');
   labelFromText(title);
@@ -69,22 +55,35 @@ export function initStatistics() {
         s2.revert();
       },
     })
-    .from(s1.chars, { yPercent: -200, duration: 1.15, ease: 'bounce.out', stagger: 0.045 })
-    .from(s2.chars, { x: () => window.innerWidth * 0.6, duration: 0.8, ease: 'power3.out', stagger: 0.02 }, '-=0.6');
+    // Peso: as letras caem acelerando e o título sente o impacto
+    .from(s1.chars, { yPercent: -160, duration: 0.7, ease: 'power3.in', stagger: 0.045 })
+    .to(title, { keyframes: { y: [0, 6, -2, 0] }, duration: 0.3, ease: 'none' }, '-=0.05')
+    // Prazo: chega deslizando, leve
+    .from(s2.chars, { x: () => window.innerWidth * 0.5, duration: 0.9, ease: 'power3.out', stagger: 0.02 }, '-=0.45');
 
   qa('.stat').forEach((stat, si) => {
-    const counters = qa('[data-anim="counter"]', stat).flatMap(prepareCounters);
+    const counters = qa('[data-anim="counter"]', stat).flatMap(buildCounter);
+    const affix = qa('.stat__affix', stat);
+
+    // Reserva a largura final (em em, acompanha o tamanho da fonte): o número cresce sem empurrar o sufixo
+    counters.forEach((c) => {
+      const em = c.node.getBoundingClientRect().width / parseFloat(getComputedStyle(c.node).fontSize);
+      c.node.style.minWidth = `${em.toFixed(3)}em`;
+      c.node.textContent = fmt(0, 0, c.decimals);
+    });
+    const leadingAffix = affix.length && stat.querySelector('.stat__value').firstElementChild === affix[0];
+    stat.classList.toggle('stat--lead-affix', !!leadingAffix);
+
+    const o = { t: 0 };
+    const render = () =>
+      counters.forEach((c) => {
+        c.node.textContent = fmt(valueAt(c, o.t), 0, c.decimals);
+      });
+
     const tl = gsap
       .timeline({ scrollTrigger: { trigger: stat, start: 'top 88%', once: true }, delay: (si % 3) * 0.12 })
-      .from(stat.children, { y: 40, opacity: 0, duration: 0.8, ease: 'power3.out', stagger: 0.06 });
-    counters.forEach((c, i) => {
-      // "24/7": o número da esquerda encosta na barra enquanto conta
-      if (i < counters.length - 1) c.span.style.textAlign = 'right';
-      tl.add(countUp(c.span, { to: c.num, decimals: c.decimals, pad: c.pad, duration: 2.1, ease: 'expo.out' }), 0.2 + i * 0.12);
-    });
-    // O código do KPI é impresso da esquerda para a direita quando o número assenta
-    tl.from(q('.stat__code', stat), { clipPath: 'inset(0% 100% 0% 0%)', duration: 0.7, ease: 'power2.inOut' }, 1.1);
-    const affix = qa('.stat__affix', stat);
-    if (affix.length) tl.from(affix, { opacity: 0, x: 10, duration: 0.5 }, 1.2);
+      .from(stat.children, { y: 40, opacity: 0, duration: 0.8, ease: 'power3.out', stagger: 0.06 })
+      .to(o, { t: 1, duration: 2.4, ease: 'none', onUpdate: render }, 0.15);
+    if (affix.length) tl.from(affix, { opacity: 0, x: leadingAffix ? -8 : 8, duration: 0.5, ease: 'power2.out' }, 1.2);
   });
 }

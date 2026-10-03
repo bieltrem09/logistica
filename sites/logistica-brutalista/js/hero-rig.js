@@ -8,33 +8,28 @@ import { CablePhysics } from './cable-physics.js';
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 const easeInOutSine = (t) => -(Math.cos(Math.PI * t) - 1) / 2;
 const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
-const smoothstep = (a, b, v) => {
-  const t = clamp((v - a) / (b - a), 0, 1);
-  return t * t * (3 - 2 * t);
+
+/**
+ * Roteiro do hero fixado, em progresso da rolagem (0–1):
+ *   0 → holdEnd       parado; a interface sai, a rota de chegada é desenhada e o guincho tensiona o cabo
+ *   → lowerEnd        o contêiner desce: ganha velocidade, inclina, balança, corrige e segue
+ *   → approachEnd     gira e vem até a câmera; as portas enchem a tela
+ *   → doorsEnd        as portas abrem para a seção 01
+ */
+export const HERO_PHASES = {
+  holdEnd: 0.18,
+  lowerEnd: 0.56,
+  approachEnd: 0.78,
+  doorsEnd: 0.96,
 };
 
-/** Fases do hero fixado, em progresso da rolagem (0–1). */
-export const HERO_PHASES = {
-  holdEnd: 0.07, // o guindaste tensiona o cabo e o carro se reposiciona: a carga ainda não desce
-  lowerEnd: 0.34, // contêiner desce balançando
-  approachEnd: 0.6, // gira e vem até a câmera; as portas enchem a tela
-};
+/** Altura real de um contêiner 20′ (m): converte px em metros para a leitura de altura. */
+export const CONTAINER_HEIGHT_M = 2.59;
 
 export function createDriver() {
   const physics = new CablePhysics();
-  const state = { progress: 0, vel: 0, velS: 0, introOffset: 0, pointer: 0 };
+  const state = { progress: 0, vel: 0, velS: 0, introOffset: 0, time: 0 };
   const geom = {};
-
-  /**
-   * Forma da carga quando é foto (lida dos data-* do <img>, em frações da imagem):
-   *   hook  ponto onde o cabo entra no moitão · box  silhueta do contêiner
-   *   cover retângulo todo opaco que enche a tela quando o contêiner vem para a câmera
-   * Sem forma, valem as proporções do contêiner vetorial/3D.
-   */
-  let shape = null;
-  function setShape(s) {
-    shape = s;
-  }
 
   /** Mede o layout estático (offset*: ignora transformações). */
   function measure(hero, cargo) {
@@ -44,117 +39,74 @@ export function createDriver() {
     const cable = parseFloat(getComputedStyle(cargo).paddingTop) || 0;
     const cargoLeft = cargo.offsetLeft;
     const cargoTop = cargo.offsetTop;
-    const imgTop = cargoTop + cable;
-    Object.assign(geom, { W, H, w, cable, cargoLeft, cargoTop, g: 4.2 * H, d: 0.3866 * w, sling: 0.282 * w });
-
-    if (shape) {
-      const ih = w * shape.ratio;
-      const [bx0, by0, bx1, by1] = shape.box;
-      const [cx0, cy0, cx1, cy1] = shape.cover;
-      Object.assign(geom, {
-        restX: cargoLeft + shape.hook[0] * w,
-        hookY0: imgTop + shape.hook[1] * ih,
-        hookLocal: { x: shape.hook[0] * w, y: shape.hook[1] * ih },
-        imgH: ih,
-        l: (bx1 - bx0) * w,
-        h: (by1 - by0) * ih,
-        boxCX: cargoLeft + ((bx0 + bx1) / 2) * w,
-        restCenterY: imgTop + ((by0 + by1) / 2) * ih,
-        coverW: (cx1 - cx0) * w,
-        coverH: (cy1 - cy0) * ih,
-        coverCX: cargoLeft + ((cx0 + cx1) / 2) * w,
-        coverCY: imgTop + ((cy0 + cy1) / 2) * ih,
-      });
-    } else {
-      const restX = cargoLeft + w / 2;
-      const restCenterY = imgTop + 0.572 * w;
-      Object.assign(geom, {
-        restX,
-        hookY0: imgTop + 0.08 * w,
-        hookLocal: { x: w / 2, y: 0.08 * w },
-        imgH: 0.78 * w,
-        l: 0.96 * w, // comprimento
-        h: 0.4 * w, // altura
-        boxCX: restX,
-        restCenterY,
-        coverW: 0.96 * w,
-        coverH: 0.4 * w,
-        coverCX: restX,
-        coverCY: restCenterY,
-      });
-    }
-
-    // Guindaste: na carga da página ele inteiro (com o gancho auxiliar pendurado) fica acima da tela
-    const header = document.querySelector('.site-header')?.offsetHeight || 0;
-    const crane = document.querySelector('.hero__crane');
-    let below = 0;
-    let anchorDown = 0;
-    if (crane && crane.offsetHeight) {
-      const ay = crane.offsetHeight * (parseFloat(getComputedStyle(crane).getPropertyValue('--crane-ay')) || 0.85);
-      let bottom = crane.offsetHeight;
-      const aux = crane.querySelector('.hero__crane-hook');
-      if (aux && aux.offsetHeight) bottom = Math.max(bottom, aux.offsetTop + aux.offsetHeight);
-      below = bottom - ay;
-      anchorDown = ay;
-    }
-    geom.pivotY = Math.min(-0.1 * H, -(below + 12));
-    geom.L0 = geom.hookY0 - geom.pivotY;
-
-    // Desce até a base do contêiner chegar perto do pé da tela
-    geom.lowerPx = clamp(H * 0.94 - (geom.restCenterY + geom.h / 2), H * 0.1, H * 0.4);
-    // A lança desce junto e no fim a cabeça aparece abaixo do cabeçalho. Se a carga desce pouco
-    // (celular), a lança desce mais e recolhe o cabo na diferença.
-    geom.boomDrop = Math.max(geom.lowerPx, header + Math.min(anchorDown, 0.1 * H) + 0.03 * H - geom.pivotY);
+    const restX = cargoLeft + w / 2;
+    const pivotY = -0.1 * H;
+    const hookY0 = cargoTop + cable + 0.08 * w;
+    Object.assign(geom, {
+      W,
+      H,
+      w,
+      cable,
+      cargoLeft,
+      cargoTop,
+      restX,
+      pivotY,
+      hookY0,
+      L0: hookY0 - pivotY,
+      l: 0.96 * w, // comprimento
+      h: 0.4 * w, // altura
+      d: 0.3866 * w, // profundidade
+      sling: 0.282 * w, // lingas do gancho ao teto
+      restCenterY: cargoTop + cable + 0.572 * w,
+      g: 4.2 * H,
+    });
+    // Desce até perto da base da tela sem sair dela (no celular o contêiner já começa baixo e desce pouco)
+    geom.lowerPx = clamp(H * 0.95 - (geom.restCenterY + geom.h / 2), H * 0.05, H * 0.4);
+    // Ponto de descarga: onde a base do contêiner chega no fim da descida
+    geom.dropX = restX;
+    geom.dropY = Math.min(geom.restCenterY + geom.lowerPx + geom.h * 0.5 + 0.035 * H, H * 0.965);
     return geom;
   }
 
-  function update(dt) {
+  /** Progresso das fases para o progresso p da rolagem. */
+  function phases(p) {
     const { holdEnd, lowerEnd, approachEnd } = HERO_PHASES;
-    const p = state.progress;
-    const pl = clamp((p - holdEnd) / (lowerEnd - holdEnd), 0, 1);
-    const pa = clamp((p - lowerEnd) / (approachEnd - lowerEnd), 0, 1);
-    const el = easeInOutSine(pl);
+    return {
+      lower: easeInOutSine(clamp((p - holdEnd) / (lowerEnd - holdEnd), 0, 1)),
+      approach: easeInOutCubic(clamp((p - lowerEnd) / (approachEnd - lowerEnd), 0, 1)),
+      // Antes de descer, o guincho recolhe um palmo de cabo: o suporte reage primeiro
+      take: Math.sin(Math.PI * clamp((p - holdEnd * 0.4) / (holdEnd * 1.2), 0, 1)),
+    };
+  }
+
+  function update(dt) {
+    state.time += dt;
+    const { lower: el, approach, take } = phases(state.progress);
 
     // Velocidade da rolagem: suavizada e esquecida quando a rolagem para
     state.velS += (state.vel - state.velS) * Math.min(1, dt * 7);
     state.vel *= Math.pow(0.04, dt);
 
-    // Antecipação: antes de descer, o cabo tensiona (a carga sobe um pouco) e o carro anda primeiro;
-    // o contêiner só acompanha com atraso, como uma carga de verdade.
-    const hold = smoothstep(0, holdEnd, p);
-    const preload = 0.022 * geom.H * hold * (1 - smoothstep(holdEnd, holdEnd + 0.08, p));
-    // Deriva lateral leve e sempre no mesmo sentido: descendo, o carro volta ao centro; subindo,
-    // vai para fora. Assim o lado do balanço acompanha o sentido da rolagem.
-    const lead = 0.06 * geom.W * hold * (1 - el);
-    // Mouse: o operador desloca o carro do guindaste um pouco; a carga responde balançando.
-    // Some quando o contêiner começa a vir para a câmera.
-    const aim = state.pointer * 0.022 * geom.W * (1 - smoothstep(lowerEnd, approachEnd, p));
+    // Vento: um balanço mínimo mantém a carga viva mesmo com o hero parado
+    const t = state.time;
+    const wind = (Math.sin(t * 0.83) * 0.6 + Math.sin(t * 0.31 + 1.3) * 0.4) * 0.0035 * geom.W * (1 - approach);
 
-    // Lança basculante: é o ponto de suspensão que desce (a carga vai junto); o cabo só
-    // recolhe se a lança precisar descer mais que a carga (celular)
-    const py = geom.pivotY + el * geom.boomDrop;
-    const Lcmd = geom.L0 + state.introOffset - preload - el * (geom.boomDrop - geom.lowerPx);
-    // Rolagem rápida empurra o carro contra o sentido da rolagem: a carga fica para trás e,
-    // quando a rolagem inverte, balança para o outro lado
-    const targetX = geom.restX + lead + aim + clamp(-state.velS * 0.05, -0.05 * geom.W, 0.05 * geom.W);
-    const targetZ = clamp(state.velS * 0.01, -0.04 * geom.H, 0.04 * geom.H);
+    const Lcmd = geom.L0 + state.introOffset + el * geom.lowerPx - take * 0.018 * geom.H;
+    const targetX =
+      geom.restX +
+      Math.sin(Math.PI * el) * 0.065 * geom.W +
+      wind +
+      clamp(-state.velS * 0.03, -0.05 * geom.W, 0.05 * geom.W);
+    const targetZ = clamp(state.velS * 0.012, -0.06 * geom.H, 0.06 * geom.H);
     const psiTarget = 0.38 + el * 0.5; // portas à esquerda, girando para a câmera ao descer
 
     const steps = Math.max(1, Math.ceil(dt / (1 / 240)));
     const h = dt / steps;
-    const py0 = state.py ?? py;
     for (let i = 0; i < steps; i += 1) {
-      // a lança anda suave entre os subpassos (sem degrau de velocidade a cada quadro)
-      physics.step({ dt: h, Lcmd, targetX, targetZ, psiTarget, g: geom.g, py: py0 + ((py - py0) * (i + 1)) / steps });
+      physics.step({ dt: h, Lcmd, targetX, targetZ, psiTarget, g: geom.g, slack: 0.045 * geom.w });
     }
-    state.py = py;
 
     const { theta, phi, L } = physics;
-    const approach = easeInOutCubic(pa);
-    // Ponta da lança como se vê: cede um pouco quando o cabo estica (a carga freando puxa)
-    // e sobe para fora do quadro quando o contêiner vem para a câmera
-    const sag = clamp(physics.ext * 0.12, -6, 10);
-    const lift = approach * (py + 0.35 * geom.H);
     return {
       tx: physics.tx,
       tz: physics.tz,
@@ -163,16 +115,14 @@ export function createDriver() {
       phi,
       psi: physics.psi,
       alpha: physics.alpha,
+      sy: physics.sy,
       hx: physics.tx + L * Math.sin(theta),
-      py: py + sag - lift,
-      ext: physics.ext,
-      hy: py + L * Math.cos(theta) * Math.cos(phi),
+      hy: geom.pivotY + L * Math.cos(theta) * Math.cos(phi),
       hz: L * Math.cos(theta) * Math.sin(phi),
       lower: el,
-      hold,
       approach,
     };
   }
 
-  return { physics, state, geom, measure, update, setShape };
+  return { physics, state, geom, measure, update, phases };
 }

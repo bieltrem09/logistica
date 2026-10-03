@@ -1,43 +1,174 @@
 /**
- * 02 MODAIS — a jornada da carga: MAR → TERRA → AR.
+ * SEÇÃO 4 — jornada logística: MAR → TERRA → AR.
  *
- * Cada modal é um capítulo com o mesmo ritmo: a faixa abre, a rota planejada aparece
- * (tracejada), o veículo percorre a rota com perfil de velocidade (acelera, cruzeiro,
- * freia) e a linha percorrida se desenha atrás dele. A telemetria conta a mesma
- * história: velocidade = derivada da posição, distância = posição.
- *
- * Entre capítulos, o contêiner VTRU 204816-3 (o mesmo do hero) sai do veículo que
- * chegou e espera o próximo: navio → caminhão → avião. É ele que o usuário acompanha.
- *
- * Desktop: acordeão (a faixa ativa abre para 74%, as outras viram abas com o
- * mini-mapa da rota já feita). Celular: uma faixa por tela, a trilha desliza.
+ * O usuário acompanha a MESMA carga do hero (o contêiner laranja VTRU 204816-3):
+ *   entrada   → o mapa se desenha: rota planejada, porto, terminal e destino ●
+ *   mar       → o navio segue a rota curva (balanço de água), a rota feita fica laranja
+ *   transbordo→ o navio para no porto, a carga passa para o caminhão, a câmera segue a rota
+ *   terra     → o caminhão acelera, faz as curvas com suspensão e chega ao terminal
+ *   embarque  → terra → ar: o caminhão sai, o avião assume
+ *   ar        → o avião acelera, sobe (sombra se afasta) e chega ao destino ●
+ *   final     → a câmera se afasta: o mapa inteiro, a rota completa e o ● azul,
+ *               que vira o bloco azul da seção 5
+ * Um veículo por vez. Tudo comandado pela rolagem (scrub), só com transform/opacity:
+ * cada veículo anda num "trilho" do tamanho da faixa, deslocado por translate em %
+ * (porcentagem do próprio trilho = da faixa), então acompanha a faixa abrindo e fechando.
  */
-import { q, qa, clamp, smoothstep, trapezoid, pointOnPath, fmt, vh } from './utils.js';
-import { splitInner, labelFromText } from './text.js';
+import { q, qa, clamp, splitInner, labelFromText, fmt } from './utils.js';
 
 const { gsap, ScrollTrigger } = window;
 
-const OPEN = 0.74;
-const TAB = 0.13;
-const THIRD = 1 / 3;
+const CARGO_ID = 'VTRU 204816-3';
 
-/** Rotas em px da faixa aberta (W × H). Os veículos são vistos de cima. */
+/*
+ * Rotas em coordenadas da faixa (0–1). Cada rota termina na mesma altura em que a
+ * próxima começa, então a linha atravessa as divisões sem quebrar.
+ * Desktop: desenhadas para a faixa aberta (74%). Celular: a faixa ocupa a tela.
+ */
 const ROUTES = {
-  // Navio sobe do alto-mar até o cais, em S suave (corrente, manobra de aproximação)
-  mar: (W, H) =>
-    `M${0.64 * W} ${1.3 * H}C${0.5 * W} ${0.88 * H} ${0.86 * W} ${0.7 * H} ${0.74 * W} ${0.52 * H}S${0.62 * W} ${0.4 * H} ${0.7 * W} ${0.34 * H}`,
-  // Caminhão desce o corredor do terminal, troca de faixa e para na doca do aeroporto
-  terra: (W, H) =>
-    `M${0.5 * W} ${-0.2 * H}C${0.5 * W} ${0.14 * H} ${0.465 * W} ${0.28 * H} ${0.47 * W} ${0.46 * H}S${0.505 * W} ${0.68 * H} ${0.5 * W} ${0.78 * H}`,
-  // Avião decola, sobe em curva e pousa no destino
-  ar: (W, H) =>
-    `M${0.7 * W} ${1.1 * H}C${0.7 * W} ${0.72 * H} ${0.56 * W} ${0.48 * H} ${0.4 * W} ${0.38 * H}S${0.2 * W} ${0.3 * H} ${0.22 * W} ${0.3 * H}`,
+  desktop: {
+    mar: [
+      [[0.74, 1.1], [0.73, 0.86], [0.58, 0.7], [0.66, 0.55]],
+      [[0.66, 0.55], [0.73, 0.42], [0.86, 0.37], [1, 0.36]],
+    ],
+    terra: [
+      [[0, 0.36], [0.24, 0.36], [0.36, 0.3], [0.56, 0.32]],
+      [[0.56, 0.32], [0.76, 0.34], [0.8, 0.5], [1, 0.5]],
+    ],
+    ar: [
+      [[0, 0.5], [0.24, 0.5], [0.42, 0.5], [0.56, 0.42]],
+      [[0.56, 0.42], [0.68, 0.35], [0.74, 0.28], [0.82, 0.26]],
+    ],
+  },
+  mobile: {
+    mar: [
+      [[-0.2, 0.52], [0.22, 0.52], [0.44, 0.48], [0.6, 0.41]],
+      [[0.6, 0.41], [0.72, 0.36], [0.86, 0.35], [1, 0.35]],
+    ],
+    terra: [
+      [[0, 0.35], [0.3, 0.35], [0.34, 0.5], [0.6, 0.5]],
+      [[0.6, 0.5], [0.82, 0.5], [0.84, 0.46], [1, 0.46]],
+    ],
+    ar: [
+      [[0, 0.46], [0.3, 0.46], [0.44, 0.4], [0.58, 0.32]],
+      [[0.58, 0.32], [0.68, 0.27], [0.76, 0.24], [0.84, 0.23]],
+    ],
+  },
 };
 
-/** Velocidade: [aceleração, frenagem] em fração do trajeto */
-const PROFILES = { mar: trapezoid(0.3, 0.32), terra: trapezoid(0.24, 0.26), ar: trapezoid(0.42, 0.3) };
+/** Para onde a imagem de cada veículo aponta (graus de tela; 0 = leste, 90 = sul). */
+const FACING = { ship: -90, truck: 90, plane: -90 };
 
-export function initModaisHead() {
+const cubic = (a, b, c, d, t) => {
+  const u = 1 - t;
+  return u * u * u * a + 3 * u * u * t * b + 3 * u * t * t * c + t * t * t * d;
+};
+
+/**
+ * Amostra a rota com distância medida na tela (largura × altura da faixa),
+ * para que a velocidade e o ângulo sejam os que o olho vê.
+ */
+function createRoute(segments) {
+  const pts = [];
+  segments.forEach((seg, si) => {
+    for (let i = si ? 1 : 0; i <= 48; i += 1) {
+      const t = i / 48;
+      pts.push({ x: cubic(seg[0][0], seg[1][0], seg[2][0], seg[3][0], t), y: cubic(seg[0][1], seg[1][1], seg[2][1], seg[3][1], t), s: 0 });
+    }
+  });
+  let aspect = 1;
+  const svgPath = segments
+    .map((s, i) => `${i ? '' : `M${s[0][0] * 100} ${s[0][1] * 100}`} C${s[1][0] * 100} ${s[1][1] * 100} ${s[2][0] * 100} ${s[2][1] * 100} ${s[3][0] * 100} ${s[3][1] * 100}`)
+    .join(' ');
+
+  const measure = (a) => {
+    aspect = a;
+    let s = 0;
+    pts.forEach((p, i) => {
+      if (i) s += Math.hypot((p.x - pts[i - 1].x) * aspect, p.y - pts[i - 1].y);
+      p.s = s;
+    });
+    pts.forEach((p) => {
+      p.s /= s;
+    });
+  };
+  measure(1);
+
+  const index = (f) => {
+    let lo = 0;
+    let hi = pts.length - 1;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >> 1;
+      if (pts[mid].s < f) lo = mid;
+      else hi = mid;
+    }
+    return lo;
+  };
+
+  /** Ponto e direção (graus de tela) na fração f do comprimento. */
+  const at = (f) => {
+    const t = clamp(f, 0, 1);
+    const i = Math.min(index(t), pts.length - 2);
+    const a = pts[i];
+    const b = pts[i + 1];
+    const k = (t - a.s) / (b.s - a.s || 1);
+    const angle = (Math.atan2(b.y - a.y, (b.x - a.x) * aspect) * 180) / Math.PI;
+    return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, angle };
+  };
+
+  /** Pontos da polilinha percorrida até f (em 0–100, para o viewBox da faixa). */
+  const pointsTo = (f) => {
+    if (f <= 0) return '';
+    const end = at(f);
+    const out = [];
+    for (let i = 0; i < pts.length && pts[i].s < f; i += 1) out.push(`${(pts[i].x * 100).toFixed(2)},${(pts[i].y * 100).toFixed(2)}`);
+    out.push(`${(end.x * 100).toFixed(2)},${(end.y * 100).toFixed(2)}`);
+    return out.join(' ');
+  };
+
+  return { at, pointsTo, measure, svgPath, start: pts[0], end: pts[pts.length - 1] };
+}
+
+/** Diferença entre dois ângulos em graus (−180…180). */
+const turn = (a, b) => ((((b - a) % 360) + 540) % 360) - 180;
+
+/** Camada de rota, nós e etiqueta de cada faixa (só existe com animação). */
+function buildStripLayer(s, route, node) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('class', 'journey__route');
+  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.setAttribute('aria-hidden', 'true');
+  const plan = document.createElementNS(NS, 'polyline');
+  plan.setAttribute('class', 'journey__plan');
+  const done = document.createElementNS(NS, 'polyline');
+  done.setAttribute('class', 'journey__done');
+  svg.append(plan, done);
+  s.el.insertBefore(svg, s.veh);
+
+  const nodeEl = document.createElement('span');
+  nodeEl.className = `journey__node journey__node--${node.kind}`;
+  nodeEl.setAttribute('aria-hidden', 'true');
+  nodeEl.style.setProperty('--nu', route.end.x);
+  nodeEl.style.setProperty('--nv', route.end.y);
+  nodeEl.innerHTML = `<i></i><span class="journey__label micro">${node.label}</span>`;
+  s.el.append(nodeEl);
+
+  // Trilho: o veículo e a etiqueta da carga andam juntos; só o veículo gira
+  const rail = document.createElement('div');
+  rail.className = 'journey__rail';
+  const tag = document.createElement('span');
+  tag.className = 'journey__tag micro';
+  tag.setAttribute('aria-hidden', 'true');
+  tag.innerHTML = `${CARGO_ID}<b>${s.status}</b>`;
+  rail.append(s.veh, tag);
+  s.el.insertBefore(rail, svg.nextSibling);
+
+  return { svg, plan, done, rail, node: nodeEl, tag, dot: q('i', nodeEl), label: q('.journey__label', nodeEl) };
+}
+
+function initModaisHead() {
   const title = q('.modais__title');
   const [l1, l2] = qa('.line', title);
   labelFromText(title);
@@ -45,7 +176,7 @@ export function initModaisHead() {
   const s1 = splitInner(l1, 'chars');
   const s2 = splitInner(l2, 'chars');
 
-  // "TRÊS MODAIS." chega por esteira; "UM CONTATO." cai como carimbo de despacho
+  // TRÊS MODAIS chega pela esteira; UM CONTATO é carimbado
   gsap
     .timeline({
       scrollTrigger: { trigger: title, start: 'top 82%', once: true },
@@ -56,238 +187,152 @@ export function initModaisHead() {
       },
     })
     .from(s1.chars, { x: () => window.innerWidth * 0.55, duration: 1.25, ease: 'power4.out', stagger: 0.04 })
-    .from(s2.chars, { scale: 2.6, opacity: 0, duration: 0.42, ease: 'power4.in', stagger: 0.045 }, '-=0.55')
-    .to(title, { keyframes: { y: [0, 5, -3, 2, 0] }, duration: 0.35, ease: 'none' }, '-=0.05');
-}
-
-/** Primeira posição (0–1) da rota que satisfaz `test` — ex.: onde ela entra na tela. */
-function findPos(path, len, test) {
-  for (let i = 0; i <= 200; i += 1) {
-    if (test(path.getPointAtLength((len * i) / 200))) return i / 200;
-  }
-  return 0;
-}
-
-/** Inverte o perfil: em que instante do trecho o veículo passa pela posição `pos`. */
-function timeAt(profile, pos) {
-  let lo = 0;
-  let hi = 1;
-  for (let i = 0; i < 30; i += 1) {
-    const m = (lo + hi) / 2;
-    if (profile.pos(m) < pos) lo = m;
-    else hi = m;
-  }
-  return (lo + hi) / 2;
-}
-
-function readStrip(el) {
-  const route = q('.modal-strip__route', el);
-  return {
-    el,
-    key: el.classList.contains('modal-strip--mar') ? 'mar' : el.classList.contains('modal-strip--terra') ? 'terra' : 'ar',
-    veh: q('.modal-strip__vehicle', el),
-    bg: q('.modal-strip__bg', el),
-    body: q('.modal-strip__body', el),
-    top: q('.modal-strip__top', el),
-    tab: q('.modal-strip__tab', el),
-    tel: q('.modal-strip__tel', el),
-    speed: q('[data-tel="speed"]', el),
-    dist: q('[data-tel="dist"]', el),
-    wake: q('.vehicle__wake', el),
-    clouds: q('.modal-strip__clouds', el),
-    route,
-    plan: q('.route__plan', route),
-    done: q('.route__done', route),
-    dots: qa('.route__dot', route),
-    labels: qa('.route__label', route),
-    len: 1,
-    entry: 0,
-    W: 1,
-    H: 1,
-  };
-}
-
-/**
- * Desenha as rotas no tamanho da faixa ABERTA (não no tamanho atual: durante o acordeão
- * a faixa muda de largura, a rota só é comprimida com scaleX).
- */
-function layoutRoutes(strips, probe) {
-  const desktop = window.matchMedia('(min-width: 900px)').matches;
-  // Mede pela sonda, não pelo pin: enquanto está fixado, o ScrollTrigger congela a largura
-  // do pin em px e, num resize, ele ainda devolveria o tamanho antigo.
-  strips.forEach((s) => {
-    s.W = desktop ? probe.offsetWidth * OPEN : s.el.offsetWidth;
-    s.H = probe.offsetHeight;
-    s.route.style.width = `${s.W}px`;
-    s.route.setAttribute('viewBox', `0 0 ${s.W} ${s.H}`);
-    const d = ROUTES[s.key](s.W, s.H);
-    s.plan.setAttribute('d', d);
-    s.done.setAttribute('d', d);
-    s.len = s.done.getTotalLength();
-    s.done.style.strokeDasharray = `${s.len} ${s.len}`;
-    // Origem visível: onde a rota entra na tela (o veículo vem de fora do quadro).
-    // É também ali que o contêiner espera o próximo veículo.
-    s.entry =
-      s.key === 'terra'
-        ? findPos(s.done, s.len, (p) => p.y >= 0.24 * s.H)
-        : findPos(s.done, s.len, (p) => p.y <= 0.84 * s.H);
-    const ends = [pointOnPath(s.done, s.len, s.entry), pointOnPath(s.done, s.len, 1)];
-    ends.forEach((p, i) => {
-      s.dots[i].setAttribute('d', `M${p.x} ${p.y}h0`);
-      const label = s.labels[i];
-      const right = p.x > s.W * 0.45;
-      label.setAttribute('x', right ? p.x - 16 : p.x + 16);
-      label.setAttribute('y', p.y + 4);
-      label.setAttribute('text-anchor', right ? 'end' : 'start');
-    });
-  });
-}
-
-/** Lê a pose de repouso do CSS (tríptico estático) em px, para o quadro final. */
-function restPose(s, stripW) {
-  const cs = getComputedStyle(s.veh);
-  const px = (v, size) => (parseFloat(v) / 100) * size;
-  return {
-    x: px(cs.getPropertyValue('--vx'), stripW),
-    y: px(cs.getPropertyValue('--vy'), s.el.offsetHeight),
-    rotation: parseFloat(cs.getPropertyValue('--rot')) || 0,
-  };
-}
-
-/**
- * Move um veículo pela rota. `t` é o tempo do trecho (0–1), o perfil decide a posição.
- * Devolve { s, vel, pt } para quem quiser reagir (telemetria, rastro, sombra).
- */
-function placeOnRoute(s, t) {
-  const prof = PROFILES[s.key];
-  const pos = prof.pos(t);
-  const vel = prof.vel(t);
-  const pt = pointOnPath(s.done, s.len, pos);
-  s.done.style.strokeDashoffset = s.len * (1 - pos);
-  return { pos, vel, pt };
-}
-
-/** Telemetria: velocidade = perfil, distância = posição. */
-function telemetry(s, pos, vel, speedMax, distMax, pad) {
-  s.speed.textContent = fmt(speedMax * vel, { pad });
-  s.dist.textContent = fmt(distMax * pos);
-}
-
-/** Cada veículo tem o seu jeito de andar. */
-const DRIVE = {
-  // Navio: rumo da rota + balanço lento de mar; o rastro cresce com a velocidade
-  mar(s, t) {
-    const { pos, vel, pt } = placeOnRoute(s, t);
-    const sway = Math.sin(pos * Math.PI * 5) * 1.6 * (0.4 + vel);
-    gsap.set(s.veh, { x: pt.x, y: pt.y, rotation: pt.angle + 90 + sway, scale: 1 });
-    gsap.set(s.wake, { scaleY: 0.3 + 1.7 * vel, opacity: 0.35 + 0.65 * vel });
-    telemetry(s, pos, vel, 18, 412, 2);
-  },
-  // Caminhão: a carreta atrasa nas curvas (rumo médio) e a suspensão sente o piso
-  terra(s, t) {
-    const { pos, vel, pt } = placeOnRoute(s, t);
-    const back = pointOnPath(s.done, s.len, Math.max(0, pos - 0.03));
-    const yaw = (pt.angle + back.angle) / 2 - 90;
-    const bump = 1 + Math.sin(pos * Math.PI * 22) * 0.008 * vel;
-    gsap.set(s.veh, { x: pt.x, y: pt.y, rotation: yaw, scale: bump });
-    telemetry(s, pos, vel, 80, 1240, 2);
-  },
-  // Avião: sobe (escala + sombra afastando), inclina nas curvas e desce no destino
-  ar(s, t) {
-    const { pos, vel, pt } = placeOnRoute(s, t);
-    const alt = smoothstep(0.1, 0.5, t) * (1 - smoothstep(0.74, 1, t));
-    const a0 = pointOnPath(s.done, s.len, Math.max(0, pos - 0.02)).angle;
-    const a1 = pointOnPath(s.done, s.len, Math.min(1, pos + 0.02)).angle;
-    const bank = clamp((a1 - a0) / 18, -1, 1);
-    gsap.set(s.veh, {
-      x: pt.x,
-      y: pt.y,
-      rotation: pt.angle + 90,
-      scaleX: (1 + 0.16 * alt) * (1 - Math.abs(bank) * 0.14),
-      scaleY: 1 + 0.16 * alt,
-      '--alt': 8 + 112 * alt,
-    });
-    if (s.clouds) gsap.set(s.clouds, { opacity: 0.15 + 0.75 * alt });
-    s.speed.textContent = fmt(850 * Math.max(vel, alt * 0.9), { pad: 3 });
-    s.dist.textContent = fmt(10000 * alt);
-  },
-};
-
-/**
- * O contêiner VTRU 204816-3 trocando de veículo, numa timeline já montada.
- * `at` = instantes dos capítulos; `pos(s, p)` = ponto na tela da posição `p` (0–1) da rota
- * de `s` com o capítulo de `s` aberto (desktop e celular calculam cada um o seu).
- */
-function cargoChain(tl, cargo, { mar, terra, ar }, at, pos) {
-  const dockMar = () => pos(mar, 1);
-  const pickTerra = () => pos(terra, terra.entry);
-  const dockTerra = () => pos(terra, 1);
-  const pickAr = () => pos(ar, ar.entry);
-  const destAr = () => pos(ar, 1);
-  const pickT = { terra: timeAt(PROFILES.terra, terra.entry), ar: timeAt(PROFILES.ar, ar.entry) };
-
-  // Navio atracado: o contêiner sai do convés (sobe no guindaste do cais)
-  tl.fromTo(
-    cargo,
-    { autoAlpha: 0, scale: 0.8, x: () => dockMar().x, y: () => dockMar().y },
-    { autoAlpha: 1, scale: 1.25, duration: 0.3, ease: 'power2.out' },
-    at.marDock,
-  )
-    // A câmera acompanha a carga: o cenário muda por baixo dela até o ponto de coleta
-    .to(cargo, { x: () => pickTerra().x, y: () => pickTerra().y, scale: 1, duration: 0.9, ease: 'power2.inOut' }, at.terraOpen)
-    // O caminhão passa pelo ponto de coleta e leva o contêiner
-    .to(cargo, { autoAlpha: 0, scale: 0.8, duration: 0.12 }, at.terraGo + at.terraDur * pickT.terra)
-    // Caminhão na doca do aeroporto: o contêiner é descarregado
-    .fromTo(
-      cargo,
-      { x: () => dockTerra().x, y: () => dockTerra().y },
-      { autoAlpha: 1, scale: 1.25, duration: 0.3, ease: 'power2.out', immediateRender: false },
-      at.terraDock,
-    )
-    .to(cargo, { x: () => pickAr().x, y: () => pickAr().y, scale: 1, duration: 0.9, ease: 'power2.inOut' }, at.arOpen)
-    .to(cargo, { autoAlpha: 0, scale: 0.8, duration: 0.12 }, at.arGo + at.arDur * pickT.ar)
-    // Pouso: o contêiner desce no destino, ao lado do avião (a etiqueta não fica embaixo dele)
-    .fromTo(
-      cargo,
-      { x: () => destAr().x + 0.07 * innerWidth, y: () => destAr().y + 0.12 * vh(), scale: 1.4 },
-      { autoAlpha: 1, scale: 1, duration: 0.35, ease: 'power3.out', immediateRender: false },
-      at.arLand,
-    )
-    .call(() => ar.route.classList.add('is-arrived'), null, at.arLand + 0.05)
-    .call(() => ar.route.classList.remove('is-arrived'), null, at.arLand);
-}
-
-/**
- * Depois de um resize as rotas são redesenhadas no novo tamanho, mas um tween só chama
- * onUpdate quando o tempo da timeline muda. Se a pessoa redimensiona sem rolar, o veículo
- * ficaria nas coordenadas antigas, fora da rota. Isto reposiciona tudo no tempo atual.
- */
-function redrawTravels(tl, travels, finalAt = Infinity) {
-  const t = tl.time();
-  travels.forEach(({ s, at, dur }) => {
-    const p = clamp((t - at) / dur, 0, 1);
-    if (p <= 0) s.done.style.strokeDashoffset = s.len;
-    else if (p >= 1) s.done.style.strokeDashoffset = 0;
-    if (p > 0 && t < finalAt) DRIVE[s.key](s, p);
-  });
+    .from(s2.chars, { scale: 2.2, opacity: 0, duration: 0.42, ease: 'power4.in', stagger: 0.045 }, '-=0.55')
+    .to(title, { keyframes: { y: [0, 4, -2, 0] }, duration: 0.3, ease: 'none' }, '-=0.05');
 }
 
 export function initLogisticsJourney({ smoother }) {
-  const section = q('.modais');
+  initModaisHead();
+
   const pin = q('.modais__pin');
   const track = q('.modais__track');
-  const cargo = q('.journey-cargo', pin);
-  const strips = qa('.modal-strip').map(readStrip);
+  const STATUS = { mar: 'Em alto-mar', terra: 'Em rota · BR-116', ar: 'Em voo · FL 350' };
+  const NODES = {
+    mar: { kind: 'port', label: 'Porto de Santos · transbordo' },
+    terra: { kind: 'gate', label: 'GRU · embarque' },
+    ar: { kind: 'dest', label: 'Destino · entregue' },
+  };
+  const strips = qa('.modal-strip').map((el) => {
+    const key = ['mar', 'terra', 'ar'].find((k) => el.classList.contains(`modal-strip--${k}`));
+    const veh = q('.modal-strip__vehicle', el);
+    return {
+      key,
+      el,
+      veh,
+      img: q('img', veh),
+      kind: { mar: 'ship', terra: 'truck', ar: 'plane' }[key],
+      status: STATUS[key],
+      bg: q('.modal-strip__bg', el),
+      bgImg: q('.modal-strip__bg img', el),
+      body: q('.modal-strip__body', el),
+      top: q('.modal-strip__top', el),
+      tab: q('.modal-strip__tab', el),
+      tel: q('.modal-strip__tel', el),
+      speed: q('[data-tel="speed"]', el),
+      dist: q('[data-tel="dist"]', el),
+      wake: q('.vehicle__wake', el),
+      clouds: q('.modal-strip__clouds', el),
+      size: { w: 0, h: 0 },
+      k: 1, // escala do veículo (sai de cena menor)
+      t: 0, // progresso do veículo na rota
+      line: 0, // rota feita além do veículo (a carga segue até o nó no transbordo)
+      draw: 0, // quanto da rota planejada já foi desenhado
+      lastAngle: null,
+    };
+  });
   const [mar, terra, ar] = strips;
-  const pinW = () => section.offsetWidth;
+  const vh = () => window.innerHeight;
+  const mobileQuery = window.matchMedia('(max-width: 899px)');
 
-  // Sonda invisível com o tamanho do pin (100% × 100svh, mínimo 600px), fora do pin
-  const probe = document.createElement('div');
-  probe.className = 'modais__probe';
-  probe.setAttribute('aria-hidden', 'true');
-  section.prepend(probe);
-  layoutRoutes(strips, probe);
-  ScrollTrigger.addEventListener('refreshInit', () => layoutRoutes(strips, probe));
+  // Carga laranja (o contêiner do hero) no convés do navio e na carreta do caminhão
+  [mar, terra].forEach((s) => {
+    const mark = document.createElement('span');
+    mark.className = `vehicle__cargo vehicle__cargo--${s.kind}`;
+    mark.setAttribute('aria-hidden', 'true');
+    s.veh.append(mark);
+    s.cargo = mark;
+  });
+
+  let layers = null;
+  let routes = null;
+  const build = (set) => {
+    routes = Object.fromEntries(strips.map((s) => [s.key, createRoute(ROUTES[set][s.key])]));
+    if (!layers) layers = Object.fromEntries(strips.map((s) => [s.key, buildStripLayer(s, routes[s.key], NODES[s.key])]));
+    strips.forEach((s) => {
+      s.route = routes[s.key];
+      s.layer = layers[s.key];
+      s.layer.node.style.setProperty('--nu', s.route.end.x);
+      s.layer.node.style.setProperty('--nv', s.route.end.y);
+      s.draw = 0;
+      s.t = 0;
+      s.line = 0;
+      s.k = 1;
+      s.lastAngle = null;
+    });
+  };
+
+  /** Mede a proporção de cada faixa (aberta no desktop, tela cheia no celular). */
+  const measure = () => {
+    const W = pin.offsetWidth;
+    const H = pin.offsetHeight;
+    const stripW = mobileQuery.matches ? W : W * 0.74;
+    strips.forEach((s) => {
+      s.route.measure(stripW / H);
+      s.size = { w: s.veh.offsetWidth, h: s.veh.offsetHeight, strip: stripW, tag: s.layer.tag.offsetWidth };
+    });
+  };
+
+  /** Posiciona cada veículo na sua rota e atualiza rota feita e telemetria. */
+  const SPEED = { mar: [18, 2], terra: [80, 2], ar: [850, 3] };
+  const DIST = { mar: 412, terra: 1240, ar: 10000 };
+  const render = () => {
+    strips.forEach((s) => {
+      const { route, layer } = s;
+      const p = route.at(s.t);
+      const ahead = route.at(Math.min(1, s.t + 0.02));
+      const bend = s.lastAngle === null ? 0 : turn(s.lastAngle, ahead.angle);
+      s.lastAngle = ahead.angle;
+      const rot = p.angle - FACING[s.kind];
+      layer.rail.style.setProperty('--u', p.x.toFixed(4));
+      layer.rail.style.setProperty('--v', p.y.toFixed(4));
+      s.veh.style.setProperty('--a', `${rot.toFixed(2)}deg`);
+      s.veh.style.setProperty('--s', s.k.toFixed(3));
+      // Etiqueta da carga logo acima do veículo, qualquer que seja a direção
+      const r = (rot * Math.PI) / 180;
+      const ext = (Math.abs(s.size.w * Math.sin(r)) + Math.abs(s.size.h * Math.cos(r))) / 2;
+      layer.tag.style.setProperty('--ty', `${Math.round(-ext * (s.kind === 'plane' ? 1.05 : 1) - 12)}px`);
+      // ...e sem sair da faixa nas bordas
+      const half = s.size.tag / 2 + 10;
+      const cx = p.x * s.size.strip;
+      layer.tag.style.setProperty('--tx', `${Math.round(clamp(cx, half, s.size.strip - half) - cx)}px`);
+      layer.plan.setAttribute('points', route.pointsTo(s.draw));
+      layer.done.setAttribute('points', route.pointsTo(Math.max(s.t, s.line)));
+
+      // Velocidade: sobe na partida e cai na chegada (como o easing do trajeto)
+      const v = Math.sin(Math.PI * clamp(s.t * 1.04, 0, 1)) ** 0.7;
+      const [max, pad] = SPEED[s.key];
+      s.speed.textContent = fmt(Math.round(max * v), pad);
+      s.dist.textContent = fmt(Math.round(DIST[s.key] * s.t));
+
+      if (s.kind === 'ship') {
+        gsap.set(s.wake, { scaleY: 0.45 + 1.4 * v, opacity: 0.35 + 0.65 * v });
+      } else if (s.kind === 'truck') {
+        // Suspensão: vibração da estrada com a rolagem e inclinação nas curvas
+        gsap.set(s.img, {
+          y: Math.sin(s.t * 260) * 1.6 * v,
+          rotation: clamp(-bend * 0.9, -3, 3),
+          scaleX: 1 - Math.min(Math.abs(bend) * 0.004, 0.02),
+        });
+      } else {
+        // Avião: sobe (cresce, sombra se afasta) e inclina nas curvas
+        const climb = gsap.parseEase('power2.inOut')(clamp((s.t - 0.12) / 0.7, 0, 1));
+        gsap.set(s.veh, { '--alt': 6 + climb * 110 });
+        const k = 0.62 + climb * 0.4;
+        gsap.set(s.img, { scaleY: k, scaleX: k * (1 - Math.min(Math.abs(bend) * 0.02, 0.1)) });
+      }
+    });
+  };
+
+  // Navio sobre a água: balanço contínuo e mínimo (y + rotação)
+  const bob = gsap
+    .timeline({ repeat: -1, paused: true, defaults: { ease: 'sine.inOut' } })
+    .to(mar.img, { y: 2.2, rotation: 0.9, duration: 1.4 })
+    .to(mar.img, { y: -1.6, rotation: -0.7, duration: 1.6 })
+    .to(mar.img, { y: 0, rotation: 0, duration: 1.2 });
+  ScrollTrigger.create({ trigger: pin, start: 'top bottom', end: 'bottom top', onToggle: (self) => (self.isActive ? bob.play() : bob.pause()) });
+
+  const draw = (s, at, duration = 0.6) => tl0.to(s, { draw: 1, duration, ease: 'power1.inOut' }, at);
+  let tl0 = null; // linha do tempo ativa (para o desenho da rota planejada)
 
   const scrollToLabel = (tl, label) => {
     const st = tl.scrollTrigger;
@@ -295,155 +340,133 @@ export function initLogisticsJourney({ smoother }) {
     smoother.scrollTo(st.start + (st.end - st.start) * (tl.labels[label] / tl.duration()), true);
   };
 
-  // O cenário entra antes de fixar: faixas sobem como blocos de mapa, cada uma no seu tempo
-  gsap
-    .timeline({ defaults: { ease: 'none' }, scrollTrigger: { trigger: pin, start: 'top bottom', end: 'top top', scrub: 0.5 } })
-    // (laterais negativas: os veículos do quadro final continuam cruzando as divisões)
-    .fromTo(strips.map((s) => s.el), { clipPath: 'inset(22% -100% 0% -100%)' }, { clipPath: 'inset(0% -100% 0% -100%)', stagger: 0.12, duration: 0.7 }, 0)
-    .fromTo(strips.map((s) => s.bg), { scale: 1.22 }, { scale: 1, stagger: 0.12, duration: 0.9 }, 0)
-    // (clip-path, não opacidade: a opacidade desses rótulos pertence à timeline fixada abaixo;
-    // se as duas mexessem nela, os rótulos de Terra/Ar podiam sumir ao rolar de volta)
-    .fromTo(strips.map((s) => s.top), { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', stagger: 0.1, duration: 0.4 }, 0.45);
-
-
   const mm = gsap.matchMedia();
 
-  /* ─────────── Desktop: acordeão + contêiner que troca de veículo ─────────── */
+  // ── Desktop: acordeão — a faixa ativa abre, as outras viram abas; a câmera segue a rota ──
   mm.add('(min-width: 900px)', () => {
+    build('desktop');
     const els = strips.map((s) => s.el);
-    const routeScale = (basis) => basis / OPEN;
-    gsap.set(strips.map((s) => s.veh), { autoAlpha: 0, x: 0, y: 0, rotation: 0, xPercent: -50, yPercent: -50 });
-    gsap.set(strips.map((s) => s.route), { scaleX: routeScale(THIRD), transformOrigin: '0% 50%' });
-    gsap.set(cargo, { autoAlpha: 0 });
+    const vehicles = strips.map((s) => s.veh);
+    const tags = strips.map((s) => s.layer.tag);
+    gsap.set([...vehicles, ...tags], { autoAlpha: 0 });
+    gsap.set(strips.map((s) => [s.layer.dot, s.layer.label]).flat(), { autoAlpha: 0 });
+    gsap.set(strips.map((s) => s.layer.dot), { scale: 0 });
 
-    const travels = [];
     const tl = gsap.timeline({
       defaults: { ease: 'none' },
+      onUpdate: render,
       scrollTrigger: {
         trigger: pin,
         start: 'top top',
-        end: () => `+=${vh() * 6}`,
+        end: () => `+=${vh() * 7.5}`,
         pin: true,
         scrub: true,
         invalidateOnRefresh: true,
-      },
-    });
-    // (evento global e não onRefresh: o onRefresh pode rodar antes de `tl` existir)
-    const redraw = () => redrawTravels(tl, travels, tl.labels.final);
-    ScrollTrigger.addEventListener('refresh', redraw);
-
-    /** Abre um capítulo: faixa ativa 74%, demais viram abas; rotas acompanham a largura. */
-    const open = (active, at) => {
-      strips.forEach((s) => {
-        const basis = s === active ? OPEN : TAB;
-        tl.to(s.el, { flexBasis: `${basis * 100}%`, duration: 0.9, ease: 'power2.inOut' }, at).to(
-          s.route,
-          { scaleX: routeScale(basis), duration: 0.9, ease: 'power2.inOut' },
-          at,
-        );
-      });
-    };
-    /** A rota planejada aparece tracejada; pontos de origem e destino acendem. */
-    const plan = (s, at) => {
-      tl.fromTo(s.plan, { opacity: 0 }, { opacity: 1, duration: 0.35 }, at)
-        .fromTo(s.plan, { strokeDashoffset: 400 }, { strokeDashoffset: 0, duration: 0.9 }, at)
-        .fromTo(s.dots, { opacity: 0 }, { opacity: 1, duration: 0.2, stagger: 0.25 }, at + 0.2)
-        .fromTo(s.labels, { opacity: 0, x: -8 }, { opacity: 1, x: 0, duration: 0.3, stagger: 0.25 }, at + 0.3);
-    };
-    /** Rótulos da rota saem quando a faixa vira aba (o mini-mapa fica). */
-    const fold = (s, at) => tl.to(s.labels, { opacity: 0, duration: 0.2 }, at).to(s.plan, { opacity: 0.4, duration: 0.3 }, at);
-    const travel = (s, at, duration) => {
-      const o = { t: 0 };
-      travels.push({ s, at, dur: duration });
-      tl.fromTo(o, { t: 0 }, { t: 1, duration, onUpdate: () => DRIVE[s.key](s, o.t) }, at);
-    };
-    /** Posição global (no pin) de um ponto da rota de `s`, com a faixa de `s` começando em `left`. */
-    const routePoint = (s, pos, left) => {
-      const p = pointOnPath(s.done, s.len, pos);
-      return { x: left * pinW() + p.x, y: p.y };
-    };
-    // ── MAR ──
-    tl.addLabel('mar', 0).set(els, { overflow: 'hidden' }, 0.001);
-    open(mar, 0);
-    plan(mar, 0.35);
-    tl.to([terra.body, terra.top, ar.body, ar.top], { opacity: 0, duration: 0.3 }, 0)
-      .to([terra.tab, ar.tab], { opacity: 1, duration: 0.3 }, 0.5)
-      .to(mar.tel, { opacity: 1, duration: 0.3 }, 0.6)
-      .set(mar.veh, { autoAlpha: 1 }, 0.9)
-      .to(mar.bg, { '--bgy': '900px', duration: 3.6 }, 0)
-      .fromTo(q('img', mar.bg), { yPercent: -10 }, { yPercent: 10, duration: 3.6 }, 0);
-    travel(mar, 0.9, 2.6);
-
-    // ── MAR → TERRA ── a câmera acompanha a carga; o cenário desliza por baixo dela
-    tl.addLabel('terra', 3.8);
-    open(terra, 3.8);
-    fold(mar, 3.8);
-    plan(terra, 4.1);
-    tl.to([mar.body, mar.top, mar.tel], { opacity: 0, duration: 0.3 }, 3.8)
-      .to(mar.veh, { autoAlpha: 0, duration: 0.4 }, 3.8)
-      .to(mar.tab, { opacity: 1, duration: 0.3 }, 4.2)
-      .to(terra.tab, { opacity: 0, duration: 0.2 }, 3.8)
-      .to([terra.body, terra.top, terra.tel], { opacity: 1, duration: 0.4 }, 4.2)
-      .set(terra.veh, { autoAlpha: 1 }, 4.4)
-      .to(terra.bg, { '--bgy': '-1700px', duration: 3.4 }, 3.8)
-      .fromTo(q('img', terra.bg), { yPercent: 10 }, { yPercent: -10, duration: 3.4 }, 3.8);
-    travel(terra, 4.4, 2.6);
-    // ── TERRA → AR ── da estrada para a pista
-    tl.addLabel('ar', 7.3);
-    open(ar, 7.3);
-    fold(terra, 7.3);
-    plan(ar, 7.6);
-    tl.to([terra.body, terra.top, terra.tel], { opacity: 0, duration: 0.3 }, 7.3)
-      .to(terra.veh, { autoAlpha: 0, duration: 0.4 }, 7.3)
-      .to(terra.tab, { opacity: 1, duration: 0.3 }, 7.7)
-      .to(ar.tab, { opacity: 0, duration: 0.2 }, 7.3)
-      .to([ar.body, ar.top, ar.tel], { opacity: 1, duration: 0.4 }, 7.7)
-      .to(ar.veh, { autoAlpha: 1, duration: 0.3 }, 7.9)
-      .fromTo(ar.clouds, { yPercent: -12 }, { yPercent: 26, duration: 3.2 }, 7.6)
-      .to(ar.bg, { '--bgx': '320px', '--bgy': '520px', duration: 3.6 }, 7.3)
-      .fromTo(q('img', ar.bg), { yPercent: -10 }, { yPercent: 10, duration: 3.6 }, 7.3);
-    travel(ar, 7.9, 2.8);
-    // O contêiner troca de veículo. Cada ponto é calculado com a faixa dele aberta, e no
-    // acordeão a faixa aberta começa depois das abas à esquerda: mar 0, terra 13%, ar 26%.
-    const LEFT = { mar: 0, terra: TAB, ar: 2 * TAB };
-    cargoChain(tl, cargo, { mar, terra, ar }, {
-      marDock: 3.5, terraOpen: 3.8, terraGo: 4.4, terraDur: 2.6, terraDock: 7.0,
-      arOpen: 7.3, arGo: 7.9, arDur: 2.8, arLand: 10.7,
-    }, (s, p) => routePoint(s, p, LEFT[s.key]));
-
-    // ── FINAL ── a câmera se afasta: o tríptico se recompõe com as três rotas feitas
-    tl.addLabel('final', 11.2);
-    strips.forEach((s) =>
-      tl
-        .to(s.el, { flexBasis: `${THIRD * 100}%`, duration: 1, ease: 'power2.inOut' }, 11.2)
-        .to(s.route, { scaleX: routeScale(THIRD), duration: 1, ease: 'power2.inOut' }, 11.2),
-    );
-    fold(ar, 11.2);
-    tl.to(strips.map((s) => s.tab), { opacity: 0, duration: 0.3 }, 11.2)
-      .to(strips.map((s) => s.tel), { opacity: 0, duration: 0.3 }, 11.2)
-      .to(ar.clouds, { opacity: 0, duration: 0.4 }, 11.2)
-      .to(cargo, { autoAlpha: 0, duration: 0.3 }, 11.2)
-      .to(strips.map((s) => s.plan), { opacity: 0.25, duration: 0.4 }, 11.4)
-      .to(strips.flatMap((s) => [s.body, s.top]), { opacity: 1, duration: 0.4 }, 11.6);
-    strips.forEach((s) =>
-      tl.set(
-        s.veh,
-        {
-          x: () => restPose(s, pinW() * THIRD).x,
-          y: () => restPose(s, pinW() * THIRD).y,
-          rotation: () => restPose(s, pinW() * THIRD).rotation,
-          scale: 1,
-          scaleX: 1,
-          scaleY: 1,
-          '--alt': 14,
+        onRefresh: () => {
+          measure();
+          render();
         },
-        11.65,
-      ),
-    );
-    tl.set(mar.wake, { scaleY: 1, opacity: 1 }, 11.65)
-      .set(els, { overflow: 'visible' }, 11.65)
-      .to(strips.map((s) => s.veh), { autoAlpha: 1, duration: 0.5, stagger: 0.12 }, 11.7)
-      .set({}, {}, 12.6);
+      },
+    });
+    tl0 = tl;
+    const open = (active, at, d = 0.9) =>
+      strips.forEach((s) => tl.to(s.el, { flexBasis: s === active ? '74%' : '13%', duration: d, ease: 'power2.inOut' }, at));
+    const pop = (s, at) =>
+      tl.to(s.layer.dot, { autoAlpha: 1, scale: 1, duration: 0.25, ease: 'back.out(2.4)' }, at).to(s.layer.label, { autoAlpha: 1, duration: 0.25 }, at + 0.1);
+
+    // ENTRADA: o mapa se desenha antes de qualquer veículo
+    tl.addLabel('entrada', 0);
+    draw(mar, 0);
+    draw(terra, 0.45);
+    draw(ar, 0.9);
+    pop(mar, 0.5);
+    pop(terra, 0.95);
+    pop(ar, 1.4);
+
+    // MAR — o navio entra pela base e segue a rota até o porto
+    tl.addLabel('mar', 1.6);
+    open(mar, 1.6);
+    tl.to([terra.body, terra.top, ar.body, ar.top], { opacity: 0, duration: 0.3 }, 1.6)
+      .to([terra.layer.svg, ar.layer.svg, terra.layer.label, ar.layer.label], { opacity: 0.3, duration: 0.3 }, 1.6)
+      .to([terra.tab, ar.tab], { opacity: 1, duration: 0.3 }, 2.1)
+      .to(mar.tel, { opacity: 1, duration: 0.3 }, 2.1)
+      .to([mar.veh, mar.layer.tag], { autoAlpha: 1, duration: 0.05 }, 2.4)
+      .to(mar, { t: 0.9, duration: 2.8, ease: 'power1.inOut' }, 2.4)
+      .to(mar.bg, { '--bgy': '640px', duration: 3.6 }, 1.6)
+      .fromTo(mar.bgImg, { yPercent: -8 }, { yPercent: 8, duration: 3.6 }, 1.6);
+
+    // TRANSBORDO — a carga sai do navio e continua por terra
+    tl.addLabel('transbordo', 5.2)
+      .to(mar, { line: 1, duration: 0.3, ease: 'power1.in' }, 5.2)
+      .to(mar.layer.dot, { scale: 1.6, duration: 0.2, ease: 'power2.out' }, 5.45)
+      .to(mar.layer.dot, { scale: 1, duration: 0.3, ease: 'power2.inOut' }, 5.65)
+      .to(mar.cargo, { scale: 1.5, autoAlpha: 0, duration: 0.35, ease: 'power2.in' }, 5.3)
+      .to(mar.layer.tag, { autoAlpha: 0, duration: 0.2 }, 5.3)
+      .to(mar.veh, { autoAlpha: 0, duration: 0.6, ease: 'power2.in' }, 5.6)
+      .to(mar, { k: 0.86, duration: 0.6, ease: 'power2.in' }, 5.6)
+      .fromTo(terra.cargo, { scale: 1.5, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.35, ease: 'power2.out' }, 5.65);
+    open(terra, 5.4);
+    tl.to([mar.body, mar.top, mar.tel], { opacity: 0, duration: 0.3 }, 5.4)
+      .to(mar.tab, { opacity: 1, duration: 0.3 }, 5.9)
+      .to(terra.tab, { opacity: 0, duration: 0.2 }, 5.4)
+      .to([mar.layer.svg, mar.layer.label], { opacity: 0.3, duration: 0.3 }, 5.6)
+      .to([terra.layer.svg, terra.layer.label], { opacity: 1, duration: 0.3 }, 5.4)
+      .to([terra.body, terra.top, terra.tel], { opacity: 1, duration: 0.4 }, 5.9)
+      .set(terra, { t: 0.08 }, 5.6)
+      .to(terra.veh, { autoAlpha: 1, duration: 0.3 }, 5.6)
+      .to(terra.layer.tag, { autoAlpha: 1, duration: 0.2 }, 6.3);
+
+    // TERRA — o caminhão acelera, faz as curvas e chega ao terminal
+    tl.addLabel('terra', 6.3)
+      .to(terra, { t: 0.92, duration: 2.7, ease: 'power2.inOut' }, 6.3)
+      .to(terra.bg, { '--bgy': '-1400px', duration: 3.6 }, 5.4)
+      .fromTo(terra.bgImg, { yPercent: 8 }, { yPercent: -8, duration: 3.6 }, 5.4);
+
+    // EMBARQUE — terra → ar
+    tl.addLabel('embarque', 9)
+      .to(terra, { line: 1, duration: 0.3, ease: 'power1.in' }, 9)
+      .to(terra.layer.dot, { scale: 1.6, duration: 0.2, ease: 'power2.out' }, 9.2)
+      .to(terra.layer.dot, { scale: 1, duration: 0.3, ease: 'power2.inOut' }, 9.4)
+      .to(terra.cargo, { scale: 0.6, autoAlpha: 0, duration: 0.35, ease: 'power2.in' }, 9.1)
+      .to(terra.layer.tag, { autoAlpha: 0, duration: 0.2 }, 9.1)
+      .to(terra.veh, { autoAlpha: 0, duration: 0.5, ease: 'power2.in' }, 9.3)
+      .to(terra, { k: 0.9, duration: 0.5, ease: 'power2.in' }, 9.3);
+    open(ar, 9.2);
+    tl.to([terra.body, terra.top, terra.tel], { opacity: 0, duration: 0.3 }, 9.2)
+      .to(terra.tab, { opacity: 1, duration: 0.3 }, 9.7)
+      .to(ar.tab, { opacity: 0, duration: 0.2 }, 9.2)
+      .to([terra.layer.svg, terra.layer.label], { opacity: 0.3, duration: 0.3 }, 9.4)
+      .to([ar.layer.svg, ar.layer.label], { opacity: 1, duration: 0.3 }, 9.2)
+      .to([ar.body, ar.top, ar.tel], { opacity: 1, duration: 0.4 }, 9.7)
+      .to(ar.clouds, { opacity: 0.85, duration: 0.5 }, 9.7)
+      .set(ar, { t: 0.05 }, 9.5)
+      .to(ar.veh, { autoAlpha: 1, duration: 0.3 }, 9.5)
+      .to(ar.layer.tag, { autoAlpha: 1, duration: 0.2 }, 10.1);
+
+    // AR — o avião decola, sobe e chega ao destino ●
+    tl.addLabel('ar', 10.1)
+      .to(ar, { t: 1, duration: 2.8, ease: 'power2.inOut' }, 10.1)
+      .fromTo(ar.clouds, { yPercent: -10 }, { yPercent: 24, duration: 3.4 }, 9.7)
+      .to(ar.bg, { '--bgx': '300px', '--bgy': '480px', duration: 3.6 }, 9.2)
+      .fromTo(ar.bgImg, { yPercent: -8 }, { yPercent: 8, duration: 3.6 }, 9.2);
+
+    // CHEGADA + FINAL — a câmera se afasta: o mapa inteiro com a rota completa
+    tl.addLabel('final', 12.9)
+      .to(ar.veh, { autoAlpha: 0, duration: 0.45, ease: 'power2.in' }, 12.9)
+      .to(ar, { k: 0.35, duration: 0.45, ease: 'power2.in' }, 12.9)
+      .to(ar.layer.tag, { autoAlpha: 0, duration: 0.2 }, 12.9)
+      .to(ar.layer.dot, { scale: 2.1, duration: 0.35, ease: 'power2.out' }, 13.1)
+      .to(ar.layer.dot, { scale: 1.4, duration: 0.4, ease: 'power2.inOut' }, 13.45);
+    strips.forEach((s) => tl.to(s.el, { flexBasis: '33.3333%', duration: 1, ease: 'power2.inOut' }, 13.3));
+    tl.to(strips.map((s) => s.tab), { opacity: 0, duration: 0.3 }, 13.3)
+      .to(strips.map((s) => s.tel), { opacity: 0, duration: 0.3 }, 13.3)
+      .to(ar.clouds, { opacity: 0, duration: 0.4 }, 13.3)
+      .to(strips.flatMap((s) => [s.body, s.top]), { opacity: 1, duration: 0.4 }, 13.7)
+      .to(strips.flatMap((s) => [s.layer.svg, s.layer.label]), { opacity: 1, duration: 0.4 }, 13.5)
+      .to([mar.veh, terra.veh], { autoAlpha: 0.55, duration: 0.5 }, 13.7)
+      .to([mar, terra], { k: 0.8, duration: 0.5 }, 13.7)
+      .to(track, { scale: 0.92, duration: 1.1, ease: 'power2.inOut' }, 13.4)
+      .set({}, {}, 15);
 
     const handlers = [
       [mar, 'mar'],
@@ -454,111 +477,80 @@ export function initLogisticsJourney({ smoother }) {
       s.el.addEventListener('focusin', fn);
       return [s.el, fn];
     });
+    measure();
+    render();
     return () => {
       handlers.forEach(([el, fn]) => el.removeEventListener('focusin', fn));
-      ScrollTrigger.removeEventListener('refresh', redraw);
+      gsap.set([track, ...els], { clearProps: 'flexBasis,scale' });
     };
   });
 
-  /* ─────────── Celular: uma faixa por tela, a trilha desliza ─────────── */
+  // ── Celular: cada modal ocupa a tela e a trilha desliza para o próximo trecho da rota ──
   mm.add('(max-width: 899px)', () => {
-    gsap.set(strips.map((s) => s.veh), { autoAlpha: 0, x: 0, y: 0, rotation: 0, xPercent: -50, yPercent: -50 });
-    gsap.set(cargo, { autoAlpha: 0 });
-    const travels = [];
+    build('mobile');
+    const vehicles = strips.map((s) => s.veh);
+    const tags = strips.map((s) => s.layer.tag);
+    gsap.set([...vehicles, ...tags], { autoAlpha: 0 });
+    gsap.set(strips.map((s) => s.layer.dot), { scale: 0, autoAlpha: 0 });
+    gsap.set(strips.map((s) => s.layer.label), { autoAlpha: 0 });
+
     const tl = gsap.timeline({
       defaults: { ease: 'none' },
+      onUpdate: render,
       scrollTrigger: {
         trigger: pin,
         start: 'top top',
-        end: () => `+=${vh() * 4.2}`,
+        end: () => `+=${vh() * 5.4}`,
         pin: true,
         scrub: true,
         invalidateOnRefresh: true,
+        onRefresh: () => {
+          measure();
+          render();
+        },
       },
     });
-    const redraw = () => redrawTravels(tl, travels);
-    ScrollTrigger.addEventListener('refresh', redraw);
-    const travel = (s, at, duration) => {
-      const o = { t: 0 };
-      travels.push({ s, at, dur: duration });
-      tl.fromTo(o, { t: 0 }, { t: 1, duration, onUpdate: () => DRIVE[s.key](s, o.t) }, at);
-    };
-    const plan = (s, at) =>
-      tl.fromTo(s.plan, { opacity: 0, strokeDashoffset: 400 }, { opacity: 1, strokeDashoffset: 0, duration: 0.6 }, at).fromTo(
-        [...s.dots, ...s.labels],
-        { opacity: 0 },
-        { opacity: 1, duration: 0.2, stagger: 0.1 },
-        at + 0.2,
-      );
+    tl0 = tl;
     const slideTo = (s, at) => tl.to(track, { x: () => -s.el.offsetLeft, duration: 0.8, ease: 'power2.inOut' }, at);
+    const pop = (s, at) =>
+      tl.to(s.layer.dot, { autoAlpha: 1, scale: 1, duration: 0.25, ease: 'back.out(2.4)' }, at).to(s.layer.label, { autoAlpha: 1, duration: 0.25 }, at + 0.1);
 
-    tl.addLabel('mar', 0).set(strips.map((s) => s.el), { overflow: 'hidden' }, 0.001);
-    plan(mar, 0);
-    tl.to(strips.map((s) => s.tel), { opacity: 1, duration: 0.3 }, 0)
-      .set(mar.veh, { autoAlpha: 1 }, 0.3)
-      .to(mar.bg, { '--bgy': '700px', duration: 2.6 }, 0);
-    travel(mar, 0.3, 2.1);
+    tl.addLabel('mar', 0);
+    draw(mar, 0, 0.5);
+    draw(terra, 0.3, 0.5);
+    draw(ar, 0.5, 0.5);
+    pop(mar, 0.45);
+    pop(terra, 0.6);
+    pop(ar, 0.75);
+    tl.to(strips.map((s) => s.tel), { opacity: 1, duration: 0.3 }, 0.3)
+      .to([mar.veh, mar.layer.tag], { autoAlpha: 1, duration: 0.05 }, 0.7)
+      .to(mar, { t: 1, duration: 2.2, ease: 'power1.inOut' }, 0.7)
+      .to(mar.bg, { '--bgy': '600px', duration: 3 }, 0)
+      .to(mar.cargo, { scale: 1.5, autoAlpha: 0, duration: 0.3 }, 2.9)
+      .to([mar.veh, mar.layer.tag], { autoAlpha: 0, duration: 0.3 }, 3);
 
-    tl.addLabel('terra', 2.6).to(mar.veh, { autoAlpha: 0, duration: 0.3 }, 2.6);
-    slideTo(terra, 2.6);
-    plan(terra, 3.2);
-    tl.set(terra.veh, { autoAlpha: 1 }, 3.4)
-      .to(terra.bg, { '--bgy': '-1300px', duration: 2.8 }, 2.6)
-      .fromTo(q('img', terra.bg), { yPercent: 10 }, { yPercent: -10, duration: 2.8 }, 2.6);
-    travel(terra, 3.4, 2);
+    tl.addLabel('terra', 3);
+    slideTo(terra, 3);
+    tl.fromTo(terra.cargo, { scale: 1.5, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.3 }, 3.5)
+      .to([terra.veh, terra.layer.tag], { autoAlpha: 1, duration: 0.05 }, 3.4)
+      .to(terra, { t: 1, duration: 2.2, ease: 'power2.inOut' }, 3.8)
+      .to(terra.bg, { '--bgy': '-1200px', duration: 3 }, 3)
+      .fromTo(terra.bgImg, { yPercent: 8 }, { yPercent: -8, duration: 3 }, 3)
+      .to([terra.veh, terra.layer.tag], { autoAlpha: 0, duration: 0.3 }, 6);
 
-    tl.addLabel('ar', 5.6).to(terra.veh, { autoAlpha: 0, duration: 0.3 }, 5.6);
-    slideTo(ar, 5.6);
-    plan(ar, 6.2);
-    tl.set(ar.veh, { autoAlpha: 1 }, 6.4)
-      .fromTo(ar.clouds, { yPercent: -12 }, { yPercent: 26, duration: 2.6 }, 6);
-    travel(ar, 6.4, 2.2);
-    // O mesmo contêiner troca de veículo: ele fica parado na tela e a trilha desliza por baixo
-    // (cada faixa ocupa a tela inteira quando é a ativa, então o ponto da rota já é o da tela)
-    cargoChain(tl, cargo, { mar, terra, ar }, {
-      marDock: 2.35, terraOpen: 2.6, terraGo: 3.4, terraDur: 2, terraDock: 5.35,
-      arOpen: 5.6, arGo: 6.4, arDur: 2.2, arLand: 8.6,
-    }, (s, p) => pointOnPath(s.done, s.len, p));
-    tl.to(cargo, { autoAlpha: 0, duration: 0.3 }, 9.1).set({}, {}, 9.4);
+    tl.addLabel('ar', 6);
+    slideTo(ar, 6);
+    tl.to(ar.clouds, { opacity: 0.85, duration: 0.4 }, 6.3)
+      .to([ar.veh, ar.layer.tag], { autoAlpha: 1, duration: 0.05 }, 6.4)
+      .to(ar, { t: 1, duration: 2.2, ease: 'power2.inOut' }, 6.8)
+      .fromTo(ar.clouds, { yPercent: -10 }, { yPercent: 24, duration: 3 }, 6.3)
+      .to([ar.veh, ar.layer.tag], { autoAlpha: 0, duration: 0.3 }, 9)
+      .to(ar.layer.dot, { scale: 2, duration: 0.35, ease: 'power2.out' }, 9.1)
+      .to(ar.layer.dot, { scale: 1.4, duration: 0.35 }, 9.45)
+      .set({}, {}, 10);
 
-    // Teclado: focar um botão de uma faixa fora da tela leva até o capítulo dela
-    const handlers = [
-      [mar, 'mar'],
-      [terra, 'terra'],
-      [ar, 'ar'],
-    ].map(([s, label]) => {
-      const fn = () => scrollToLabel(tl, label);
-      s.el.addEventListener('focusin', fn);
-      return [s.el, fn];
-    });
-    return () => {
-      handlers.forEach(([el, fn]) => el.removeEventListener('focusin', fn));
-      ScrollTrigger.removeEventListener('refresh', redraw);
-    };
+    measure();
+    render();
+    return () => gsap.set(track, { clearProps: 'x' });
   });
-
-  // Saída para a próxima seção: a câmera se afasta. Quando o tríptico solta, ele recua
-  // (1 → 0.9) e o fundo escuro da seção aparece em volta, como um mapa visto de longe.
-  gsap.fromTo(
-    track,
-    { scale: 1 },
-    {
-      scale: 0.9,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: section,
-        start: 'bottom bottom',
-        end: 'bottom 15%',
-        scrub: true,
-        // criado depois dos pins e com prioridade menor: o fim da seção só existe depois que o
-        // pin acrescenta o espaço da jornada (antes disso o recuo começava no meio dela)
-        refreshPriority: -1,
-        // no celular a trilha está deslocada: o recuo acontece em torno da faixa visível
-        onToggle: () => gsap.set(track, { transformOrigin: `${pin.offsetWidth / 2 - gsap.getProperty(track, 'x')}px 50%` }),
-        onRefresh: () => gsap.set(track, { transformOrigin: `${pin.offsetWidth / 2 - gsap.getProperty(track, 'x')}px 50%` }),
-      },
-    },
-  );
-
-  return section;
 }

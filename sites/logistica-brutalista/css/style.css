@@ -876,9 +876,9 @@ button {
 .hero__cable {
   position: absolute;
   top: -60svh;
-  left: calc(var(--hook-x, 50%) - 1.5px);
+  left: calc(50% - 1.5px);
   width: 3px;
-  height: calc(60svh + var(--cable) + var(--hook-drop, 0px) + 2px);
+  height: calc(60svh + var(--cable) + 2px);
   background: var(--ink);
 }
 
@@ -892,24 +892,8 @@ button {
   object-position: 50% 0;
 }
 
-/* Foto do contêiner: proporção própria; o cabo estático desce até o moitão da foto
-   (mesmos números do data-hook do <img>: x 55,69%, y 2,77% de uma altura de 0,811 × largura) */
-.hero__cargo-img {
-  aspect-ratio: auto 1745 / 1416;
-}
-
-.hero__cargo:not(.is-missing) {
-  --hook-x: 55.69%;
-  --hook-drop: calc(var(--w) * 0.0225);
-}
-
 .hero__cargo > .hero__cargo-img {
   filter: none;
-}
-
-/* Com a foto carregada, o vetor de reserva não aparece junto */
-.hero__cargo:not(.is-missing) > .hero__cargo-svg {
-  display: none;
 }
 
 .cnt-mono {
@@ -1347,13 +1331,10 @@ button {
 .modal-strip__tab,
 .modal-strip__tel,
 .modal-strip__clouds,
-.modal-strip__route,
-.journey-cargo,
-.hero__crane,
-.hero__hud,
-.hero__rope,
 .hero__gl,
 .hero__doors,
+.hero__dim,
+.hero__fx,
 .hero-spacer,
 .yard-hud,
 .route__cargo {
@@ -1468,6 +1449,10 @@ button {
     --vy: 35%;
     --vh: min(44svh, 32vw);
   }
+
+  html.has-motion .modal-strip__vehicle--plane {
+    --vh: min(36svh, 27vw);
+  }
 }
 
 /* --------------------------------------------------------------------------
@@ -1495,7 +1480,7 @@ button {
   top: var(--cut-top);
   left: var(--cut-left);
   right: var(--cut-right);
-  height: var(--cut-h, 1.1em);
+  height: 1.1em;
   --media-bg: var(--blue);
 }
 
@@ -1540,7 +1525,7 @@ button {
   }
 
   .cut-title__media {
-    height: var(--cut-h, 0.92em);
+    height: 0.92em;
   }
 
   .services__intro {
@@ -2539,15 +2524,6 @@ html.is-loading #preloader[hidden] {
   display: block !important;
 }
 
-/* Fontes ainda chegando: conteúdo invisível atrás da porta (nada é medido nem pula).
-   Sem a porta (movimento reduzido), só o título do hero espera: é ele que quebraria em outra altura. */
-html.fonts-wait .hero__title,
-html.fonts-wait.is-loading .site-header,
-html.fonts-wait.is-loading #smooth-wrapper,
-html.fonts-wait .preloader__ui {
-  visibility: hidden;
-}
-
 #preloader {
   position: fixed;
   inset: 0;
@@ -2731,152 +2707,126 @@ html.has-3d .hero__tag::before {
   display: none;
 }
 
-/* CTA do hero: anel que pulsa depois da entrada (--ring 0 → 1, animado pelo GSAP) */
-html.has-motion .hero__cta::after {
+/* Escurece o cenário quando a câmera encosta no contêiner */
+html.has-motion .hero__dim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  background: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Linhas técnicas do hero: rota, ponto de descarga e prumo */
+html.has-motion .hero__fx {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: block;
+  color: var(--paper);
+  pointer-events: none;
+}
+
+.hero__fx-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.hero__route {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.hero__route--plan {
+  stroke: var(--ink);
+  stroke-opacity: 0.55;
+  stroke-width: 1;
+  stroke-dasharray: 2 7;
+}
+
+.hero__route--in,
+.hero__route--out {
+  stroke: var(--signal);
+  stroke-width: 2;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+}
+
+.hero__guide {
+  stroke: var(--ink);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.hero__target,
+.hero__alt,
+.hero__node {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* Ponto de descarga: mira com um pulso lento */
+.hero__target {
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border: 1.5px solid var(--signal);
+  border-radius: 50%;
+  background:
+    linear-gradient(var(--signal), var(--signal)) 50% 50% / 1.5px 100% no-repeat,
+    linear-gradient(var(--signal), var(--signal)) 50% 50% / 100% 1.5px no-repeat;
+}
+
+.hero__target::after {
   content: "";
   position: absolute;
-  inset: 0;
-  border: 2px solid var(--signal);
+  inset: -1.5px;
+  border: 1px solid var(--signal);
   border-radius: 50%;
-  opacity: calc(1 - var(--ring, 1));
-  transform: scale(calc(1 + var(--ring, 1) * 0.55));
-  pointer-events: none;
+  animation: hero-ping 2.6s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
 }
 
-/* Telemetria do guindaste: prumo, altura e alvo de pouso */
-html.has-motion .hero__hud {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
+@keyframes hero-ping {
+  from {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
 }
 
-/* Laranja e tinta: legíveis tanto sobre o céu quanto sobre as letras claras do título */
-.hud__plumb {
-  stroke: var(--signal);
-  stroke-width: 1.5;
-  stroke-dasharray: 4 6;
+.hero__alt,
+.hero__node {
+  padding: 4px 7px;
+  background: var(--ink);
+  white-space: nowrap;
 }
 
-.hud__target {
-  fill: none;
-  stroke: var(--ink);
-  stroke-width: 3;
-  transition: stroke var(--dur-base) var(--ease-out);
+.hero__alt {
+  will-change: transform;
 }
 
-.hero__hud text {
-  font-family: var(--font-mono);
-  font-size: 11px;
+/* Celular: só as linhas e o ponto de descarga — sem etiquetas sobre o título */
+@media (max-width: 767px) {
+  .hero__alt,
+  .hero__node {
+    display: none;
+  }
+}
+
+.hero__alt b {
   font-weight: 500;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  fill: var(--paper);
-  stroke: var(--ink);
-  stroke-width: 4px;
-  stroke-linejoin: round;
-  paint-order: stroke;
+  color: var(--signal);
 }
 
-.hero__hud.is-locked .hud__target {
-  stroke: var(--signal);
-}
-
-.hero__hud.is-locked .hud__alt {
-  fill: var(--signal);
-}
-
-/* Guindaste: a lança basculante. O JS põe a polia da ponta (--crane-ax, --crane-ay, em fração
-   do tamanho) exatamente no ponto de suspensão do cabo, a cada quadro. */
-html.has-motion .hero__crane {
-  --crane-h: clamp(44px, min(11svh, 8vw), 112px);
-  --crane-ax: 0.975; /* polia do vetor: (2340, 136) de 2400 × 160 */
-  --crane-ay: 0.85;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 3;
-  display: block;
-  width: calc(var(--crane-h) * 15);
-  height: var(--crane-h);
-  pointer-events: none;
-  will-change: transform;
-}
-
-/* Com a foto (assets/img/hero-guindaste.webp, 734 × 738): a lança desce do alto à esquerda e o cabo
-   sai da polia principal; o gancho auxiliar pendura da polia pequena. Pontos medidos na foto. */
-html.has-motion .hero__crane:has(.hero__crane-body:not(.is-missing)) {
-  --crane-h: clamp(220px, min(62svh, 95vw), 640px);
-  --crane-ax: 0.6873;
-  --crane-ay: 0.8591;
-  width: calc(var(--crane-h) * 734 / 738);
-}
-
-.hero__crane-body > .hero__crane-hook {
-  position: absolute;
-  /* ponto de pendurar (0,7795; 0,9785 da foto); o cabo está a 44,7% da largura do gancho */
-  left: calc(77.95% - 0.447 * 11.58%);
-  top: 97.85%;
-  width: 11.58%;
-  height: auto;
-  max-width: none;
-  object-fit: contain;
-  filter: none;
-  transform-origin: 44.7% 0;
-  will-change: transform;
-}
-
-.hero__crane-body {
-  position: absolute;
-  inset: 0;
-  overflow: visible;
-  background: none;
-}
-
-.hero__crane-body > .hero__crane-img {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: auto;
-  height: 100%;
-  max-width: none;
-  object-fit: contain;
-  filter: none;
-}
-
-.hero__crane-svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-/* Vista 2D (foto real ou vetor): o cabo é desenhado à parte, do guindaste até o gancho */
-html.has-motion:not(.has-3d) .hero__rope {
-  position: absolute;
-  top: 0;
-  left: -3.5px;
-  z-index: 3;
-  display: block;
-  width: 7px;
-  height: 1px;
-  /* cabo de aço em dois fios, como os da foto do guindaste */
-  background: linear-gradient(90deg, transparent 0 1px, #2E3236 1px 3px, transparent 3px 4px, #3B3F43 4px 6px, transparent 6px);
-  transform-origin: 50% 0;
-  pointer-events: none;
-  will-change: transform;
-}
-
-html.has-motion:not(.has-3d) .hero__cable {
-  visibility: hidden;
-}
-
-html.has-motion:not(.has-3d) .hero__cargo {
-  will-change: transform;
-}
 
 html.has-motion .hero__doors {
   position: absolute;
@@ -2911,7 +2861,7 @@ html.has-motion .hero__doors {
   top: 0;
   width: 200%;
   height: 100%;
-  background: var(--signal) var(--door-tex, none) var(--door-pos, 50% 50%) / var(--door-size, cover) no-repeat;
+  background: var(--signal) var(--door-tex, none) 50% 50% / cover no-repeat;
 }
 
 .door--left .door__face {
@@ -3008,137 +2958,6 @@ html.has-motion .modal-strip__clouds {
   pointer-events: none;
 }
 
-/* Jornada: rota de cada capítulo, em px da faixa aberta (74% da largura) */
-html.has-motion .modal-strip__route {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 2;
-  display: block;
-  height: 100%; /* largura em px vem do JS: a da faixa aberta */
-  overflow: visible;
-  color: var(--fg);
-  pointer-events: none;
-}
-
-.route__plan,
-.route__done,
-.route__dot {
-  fill: none;
-  vector-effect: non-scaling-stroke;
-}
-
-.route__plan {
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-dasharray: 2 7;
-  opacity: 0;
-}
-
-.route__done {
-  stroke: var(--signal);
-  stroke-width: 3;
-  stroke-linecap: square;
-}
-
-/* Pontos de origem e destino: traço de comprimento zero, sempre quadrado mesmo com a rota comprimida */
-.route__dot {
-  stroke: currentColor;
-  stroke-width: 11;
-  stroke-linecap: square;
-  opacity: 0;
-}
-
-.route__dot--end {
-  stroke: var(--signal);
-}
-
-.modal-strip__route.is-arrived .route__dot--end {
-  animation: vetor-arrive 1.4s var(--ease-out) 3; /* pulsa ao chegar e para */
-}
-
-@keyframes vetor-arrive {
-  0% { stroke-width: 11; }
-  40% { stroke-width: 26; stroke-opacity: 0.35; }
-  100% { stroke-width: 11; stroke-opacity: 1; }
-}
-
-.route__label {
-  fill: currentColor;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  opacity: 0;
-}
-
-/* Veículos na rota: posição e rumo vêm do JS (x, y, rotation em px da faixa) */
-html.has-motion .modal-strip__vehicle {
-  left: 0;
-  top: 0;
-  translate: none; /* a centralização (-50% -50%) vem do GSAP: xPercent/yPercent */
-  rotate: none;
-  will-change: transform;
-}
-
-/* Balanço de mar contínuo: o navio nunca fica parado na água, nem com a rolagem parada */
-html.has-motion .modal-strip__vehicle--ship img {
-  animation: vetor-swell 5.2s ease-in-out infinite;
-}
-
-@keyframes vetor-swell {
-  0%, 100% { transform: rotate(-0.7deg) scale(1); }
-  50% { transform: rotate(0.7deg) scale(1.01); }
-}
-
-/* Sonda de medida da jornada: mesmo tamanho do pin, nunca fixada (js/animations/journey.js) */
-.modais__probe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100svh;
-  min-height: 600px;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-/* O contêiner VTRU 204816-3 visto de cima, trocando de veículo */
-html.has-motion .journey-cargo {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 7;
-  translate: 0 -50%;
-  transform-origin: 0 50%;
-  visibility: hidden; /* só o acordeão do desktop mostra (autoAlpha) */
-  opacity: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  pointer-events: none;
-  will-change: transform;
-}
-
-.journey-cargo__box {
-  width: 46px;
-  height: 18px;
-  margin-left: -23px;
-  background:
-    repeating-linear-gradient(90deg, transparent 0 5px, rgba(0, 0, 0, 0.18) 5px 6px),
-    var(--signal);
-  outline: 2px solid var(--ink);
-  box-shadow: 8px 10px 0 rgba(12, 12, 12, 0.3);
-}
-
-.journey-cargo__id {
-  padding: 4px 6px 3px;
-  background: var(--ink);
-  color: var(--paper);
-  white-space: nowrap;
-}
-
 /* Fundos de reserva em movimento: --bgy desloca mar, asfalto e grade */
 html.has-motion .modal-strip__bg {
   background-position: 0 var(--bgy, 0px), 0 0;
@@ -3163,6 +2982,168 @@ html.has-motion .modal-strip__bg > img {
   }
 }
 
+/* ---------- Seção 4: jornada — rota desenhada, nós, trilhos e a carga ---------- */
+.journey__route {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.journey__plan,
+.journey__done {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.journey__plan {
+  stroke: var(--paper);
+  stroke-opacity: 0.7;
+  stroke-width: 1.5;
+  stroke-dasharray: 2 7;
+}
+
+.modal-strip--ar .journey__plan {
+  stroke: var(--ink);
+  stroke-opacity: 0.6;
+}
+
+.journey__done {
+  stroke: var(--signal);
+  stroke-width: 3;
+}
+
+/* Trilho do tamanho da faixa: translate em % = posição na faixa */
+.journey__rail {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  translate: calc(var(--u, 0) * 100%) calc(var(--v, 0) * 100%);
+  pointer-events: none;
+}
+
+html.has-motion .modal-strip__vehicle {
+  left: 0;
+  top: 0;
+  rotate: var(--a, 0deg);
+  scale: var(--s, 1);
+}
+
+.journey__tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  gap: 2px;
+  padding: 5px 8px;
+  translate: calc(var(--tx, 0px) - 50%) calc(var(--ty, -80px) - 100%);
+  background: var(--ink);
+  color: var(--paper);
+  white-space: nowrap;
+}
+
+.journey__tag b {
+  font-weight: 500;
+  color: var(--signal);
+}
+
+/* A carga laranja do hero: no convés do navio e na carreta do caminhão */
+.vehicle__cargo {
+  position: absolute;
+  z-index: 1;
+  border: 2px solid var(--ink);
+  background: repeating-linear-gradient(180deg, var(--signal) 0 7px, #D23C0E 7px 9px);
+}
+
+.vehicle__cargo--ship {
+  left: 24%;
+  width: 52%;
+  top: 47%;
+  height: 8%;
+  background: repeating-linear-gradient(90deg, var(--signal) 0 5px, #D23C0E 5px 7px);
+  outline: 2px solid var(--paper);
+}
+
+.vehicle__cargo--truck {
+  left: 4.6%;
+  width: 90.8%;
+  top: 0.5%;
+  height: 77%;
+}
+
+/* Nós da rota: porto, terminal e destino */
+.journey__node {
+  position: absolute;
+  z-index: 4;
+  left: calc(var(--nu, 0) * 100%);
+  top: calc(var(--nv, 0) * 100%);
+  pointer-events: none;
+}
+
+.journey__node i {
+  position: absolute;
+  left: -9px;
+  top: -9px;
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--signal);
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+.journey__node--dest i {
+  left: -12px;
+  top: -12px;
+  width: 24px;
+  height: 24px;
+  border-color: var(--paper);
+  background: var(--blue);
+}
+
+.journey__node--dest i::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: 1.5px solid var(--blue);
+  border-radius: 50%;
+  animation: hero-ping 2.4s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+}
+
+.journey__label {
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  padding: 4px 7px;
+  background: var(--ink);
+  color: var(--paper);
+  white-space: nowrap;
+}
+
+.journey__node--dest .journey__label {
+  right: 18px;
+  top: 16px;
+  bottom: auto;
+}
+
+@media (max-width: 899px) {
+  html.has-motion .modal-strip__vehicle--ship {
+    --vh: 20svh;
+  }
+
+  html.has-motion .modal-strip__vehicle--truck {
+    --vh: 20svh;
+  }
+
+  html.has-motion .modal-strip__vehicle--plane {
+    --vh: 26svh;
+  }
+}
+
 /* ---------- 03 Serviços: bloco azul que corta a palavra ---------- */
 .cut-title__media.is-missing {
   background-image:
@@ -3183,38 +3164,7 @@ html.has-motion .services {
 
 html.has-motion .cut-title__media,
 html.has-motion .cut-title__word--ghost {
-  will-change: clip-path, left, right;
-}
-
-/* Guindaste: cabo e lingas seguram o contêiner azul até ele assentar na palavra */
-html.has-motion .cut-title::before,
-html.has-motion .cut-title::after {
-  content: "";
-  position: absolute;
-  z-index: 1;
-  bottom: calc(100% - var(--cut-top));
-  pointer-events: none;
-  transform-origin: 50% 0;
-}
-
-html.has-motion .cut-title::before {
-  left: calc((100% + var(--cut-left) - var(--cut-right)) / 2 - 1px);
-  width: 2px;
-  height: 140svh;
-  margin-bottom: 0.32em;
-  background: var(--ink);
-  transform: scaleY(var(--cable, 1));
-}
-
-html.has-motion .cut-title::after {
-  --sling: transparent calc(50% - 1px), var(--ink) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px);
-  left: calc(var(--cut-left) + 0.04em);
-  right: calc(var(--cut-right) + 0.04em);
-  height: 0.32em;
-  background:
-    linear-gradient(to top right, var(--sling)) 0 0 / 50% 100% no-repeat,
-    linear-gradient(to top left, var(--sling)) 100% 0 / 50% 100% no-repeat;
-  opacity: var(--cable, 1);
+  will-change: clip-path, transform;
 }
 
 /* ---------- Pátio: carrossel fixo ---------- */
@@ -3308,28 +3258,19 @@ html.has-motion .cargo__name {
   }
 }
 
-/* ---------- 04 Números: odômetro ---------- */
-.odo {
-  display: inline-flex;
-  align-items: flex-start;
+/* ---------- 04 Números: contagem ---------- */
+.count__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
-.odo__d {
-  position: relative;
+.stat--lead-affix .count__num {
+  text-align: left;
+}
+
+/* Contador do HUD do pátio rola para o novo número */
+.yard-hud__idx {
   display: inline-block;
-  height: 0.86em;
-  overflow: hidden;
-}
-
-.odo__reel {
-  display: block;
-  will-change: transform;
-}
-
-.odo__reel span {
-  display: block;
-  height: 0.86em;
-  line-height: 0.86;
 }
 
 /* ---------- 05 Processo: carga percorrendo a rota ---------- */
@@ -3394,30 +3335,4 @@ html.has-cursor .cursor__label {
 
 html.has-cursor #cursor.has-label .cursor__label {
   opacity: 1;
-}
-
-/* ---------- Microinterações ---------- */
-/* Indicador "ao vivo" da operação (legenda da foto do Sobre) */
-.about__caption span.is-live::before {
-  content: "";
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-right: 8px;
-  background: var(--signal);
-  vertical-align: 1px;
-  animation: vetor-live 1.6s steps(2, jump-none) infinite;
-}
-
-@keyframes vetor-live {
-  50% { opacity: 0.15; }
-}
-
-/* Contêineres do pátio: o cartão em foco responde ao ponteiro */
-html.has-motion .cargo .pill .icon {
-  transition: transform var(--dur-base) var(--ease-out);
-}
-
-html.has-motion .cargo:hover .pill .icon {
-  transform: translateX(4px);
 }

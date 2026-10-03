@@ -1,31 +1,19 @@
 /**
- * HERO — o contêiner suspenso desce com a rolagem.
+ * HERO — o contêiner é a carga da página.
  *
- * Estrutura → suporte → carga:
- *   lança do guindaste → cabo principal → gancho → lingas → contêiner
- * A lança é basculante: na carga da página a ponta fica acima da tela; rolando, é ela que
- * desce levando a carga, e aparece por baixo do cabeçalho. Vindo para a câmera, ela sobe.
- * A física (js/cable-physics.js) dá peso: o carro anda primeiro, o cabo balança,
- * o contêiner atrasa em relação ao gancho e o cabo quica quando a descida freia.
- *
- * Fases (HERO_PHASES, progresso do hero fixado):
- *   0 → holdEnd       cabo tensiona, carro se reposiciona (a carga quase não se move)
- *   holdEnd → lowerEnd descida com balanço; telemetria mede a altura até o pátio
- *   lowerEnd → approachEnd o contêiner gira e vem até a câmera
- *   approachEnd →     as portas (DOM) abrem e revelam a seção 01
- *
- * Três vistas para o mesmo movimento:
- *   1. foto real recortada (assets/img/hero-container.webp), se o arquivo existir
- *   2. contêiner 3D (Three.js), se houver WebGL
- *   3. vetor SVG de reserva
+ * Estrutura → suporte → carga: o carro do guindaste (fora da tela) puxa o cabo,
+ * o cabo puxa o gancho e o gancho arrasta o contêiner com atraso (js/cable-physics.js).
+ * A rolagem comanda o roteiro (HERO_PHASES em js/hero-rig.js):
+ *   parado → o guincho tensiona → desce balançando → gira para a câmera → as portas abrem a seção 01.
+ * Profundidade: céu quase parado, título em velocidade média, linhas presas ao chão,
+ * contêiner com o movimento principal e o gancho com o secundário.
+ * Linhas: rota de chegada (mar → Santos), prumo até o ponto de descarga com a altura
+ * em metros e a rota de saída (Santos → 27 UF), desenhadas conforme a rolagem.
  */
-import { createDriver, HERO_PHASES } from '../hero-rig.js';
+import { createDriver, HERO_PHASES, CONTAINER_HEIGHT_M } from '../hero-rig.js';
 import { q, qa, clamp, withTimeout, fmt } from './utils.js';
 
-const { gsap, ScrollTrigger, SplitText } = window;
-
-/** Pequenos laços contínuos do hero (seta "Role"): só rodam com o hero na tela. */
-const idleLoops = [];
+const { gsap, ScrollTrigger } = window;
 
 function hasWebGL() {
   try {
@@ -36,88 +24,27 @@ function hasWebGL() {
   }
 }
 
-/** A foto do contêiner existe e carregou? (main.js marca .is-missing quando falha) */
-async function photoReady(img, media) {
-  if (!img || media.classList.contains('is-missing')) return false;
-  if (!img.complete) {
-    try {
-      await withTimeout(img.decode(), 4000);
-    } catch {
-      return false;
-    }
-  }
-  return img.naturalWidth > 0 && !media.classList.contains('is-missing');
-}
-
-/** Forma da foto do contêiner, dos data-* do <img> (frações da imagem). */
-function readShape(img) {
-  const nums = (attr, fallback) => (img.dataset[attr] || fallback).trim().split(/\s+/).map(Number);
-  return {
-    ratio: img.naturalHeight / img.naturalWidth,
-    hook: nums('hook', '0.5 0.08'),
-    box: nums('box', '0.02 0.37 0.98 0.78'),
-    cover: nums('cover', '0.1 0.45 0.9 0.72'),
-  };
-}
-
-/**
- * Vista 2D (foto real ou vetor): o contêiner gira em torno do gancho e o cabo
- * é desenhado à parte, do carro do guindaste até o gancho, sempre esticado.
- */
-function createHero2D(heroEl, cargo, { photo = false } = {}) {
-  const doors = q('.hero__doors', heroEl);
-  const rope = document.createElement('span');
-  rope.className = 'hero__rope';
-  rope.setAttribute('aria-hidden', 'true');
-  heroEl.insertBefore(rope, cargo);
+/** Reserva sem WebGL: o mesmo movimento aplicado ao vetor do contêiner. */
+function createHero2D(cargo) {
   let G;
-  const base = { x: 0, y: 0 };
-
-  // Escala que faz a área toda opaca (cover) encher a tela no fim da aproximação
-  const coverScale = () => Math.max(G.W / G.coverW, G.H / G.coverH) * 1.08;
-
+  let base = null;
   return {
     layout(geom) {
       G = geom;
-      cargo.style.transformOrigin = `${G.hookLocal.x}px ${G.cable + G.hookLocal.y}px`;
-      if (photo) {
-        // As portas em DOM recebem a foto no mesmo enquadramento do fim da aproximação
-        const cover = coverScale();
-        const imgTop = G.cargoTop + G.cable;
-        const left = G.W / 2 - (G.coverCX - G.cargoLeft) * cover;
-        const top = G.H / 2 - (G.coverCY - imgTop) * cover;
-        doors.style.setProperty('--door-size', `${G.w * cover}px auto`);
-        doors.style.setProperty('--door-pos', `${left}px ${top}px`);
-      }
+      cargo.style.transformOrigin = `${G.w / 2}px ${G.restCenterY - G.cargoTop}px`;
     },
     render(pose) {
       const a = pose.approach;
-      const cover = coverScale();
-      const depth = 1 + pose.hz / (3 * G.H); // balanço em profundidade vira escala
-      // vetor gancho → centro da área de cobertura; no fim ela fica no centro da tela
-      const cdx = G.coverCX - G.restX;
-      const cdy = G.coverCY - G.hookY0;
-      const dx = pose.hx - G.restX;
-      const dy = pose.hy - G.hookY0;
-      const fx = G.W / 2 - cdx * cover - G.restX;
-      const fy = G.H / 2 - cdy * cover - G.hookY0;
-      const tx = dx + (fx - dx) * a;
-      const ty = dy + (fy - dy) * a;
-      const rot = -(pose.theta + pose.alpha) * (1 - a);
-      const sc = depth + (cover - depth) * a;
-      cargo.style.transform = `translate3d(${tx}px, ${ty}px, 0) rotate(${rot}rad) scale(${sc})`;
-
-      const hx = G.restX + tx;
-      const hy = G.hookY0 + ty;
-      const len = Math.hypot(hx - pose.tx, hy - pose.py);
-      const ang = Math.atan2(hy - pose.py, hx - pose.tx) - Math.PI / 2;
-      rope.style.transform = `translate3d(${pose.tx}px, ${pose.py}px, 0) rotate(${ang}rad) scaleY(${len})`;
-
-      // base da silhueta (prumo da telemetria): gancho + rotação do vetor até o meio da base
-      const bx = (G.boxCX - G.restX) * sc;
-      const by = (G.restCenterY - G.hookY0 + G.h / 2) * sc;
-      base.x = hx + bx * Math.cos(rot) - by * Math.sin(rot);
-      base.y = hy + bx * Math.sin(rot) + by * Math.cos(rot);
+      const r = G.sling + G.h / 2;
+      const dx = pose.hx + r * Math.sin(pose.theta) - G.restX;
+      const dy = pose.hy + r * Math.cos(pose.theta) - G.restCenterY;
+      const cover = Math.max(G.W / G.l, G.H / G.h) * 1.08;
+      const tx = dx + (G.W / 2 - G.restX - dx) * a;
+      const ty = dy + (G.H / 2 - G.restCenterY - dy) * a;
+      const rot = -(pose.theta + pose.alpha * 0.6) * (1 - a);
+      cargo.style.transform = `translate3d(${tx}px, ${ty + pose.sy * (1 - a)}px, 0) rotate(${rot}rad) scale(${1 + (cover - 1) * a})`;
+      const reach = G.sling + G.h + pose.sy;
+      base = { x: pose.hx + reach * Math.sin(pose.theta), y: pose.hy + reach * Math.cos(pose.theta) };
     },
     tagPoint() {
       return null;
@@ -129,139 +56,96 @@ function createHero2D(heroEl, cargo, { photo = false } = {}) {
 }
 
 /**
- * Guindaste: a lança basculante. A polia da ponta (âncora definida no CSS) fica sempre no
- * ponto de suspensão do cabo; a lança anda com o carro (mouse, rolagem rápida), desce com a
- * carga e cede quando o cabo estica. Funciona com a foto recortada ou com o vetor de reserva.
+ * Linhas técnicas do hero. Tudo em px do hero (viewBox = tamanho do hero),
+ * atualizado só com atributos/transform — nada de layout por quadro.
  */
-function createCrane(heroEl) {
-  const crane = q('.hero__crane', heroEl);
-  if (!crane) return null;
-  const aux = q('.hero__crane-hook', crane);
-  let ax = 0;
-  let ay = 0;
-  // Gancho auxiliar (foto): pêndulo próprio, sacudido pela aceleração da ponta da lança
-  const p = { ang: 0, vel: 0, x: null, y: null, vx: 0, vy: 0, axl: 0, ayl: 0, len: 120, g: 3600 };
-  return {
-    layout() {
-      const cs = getComputedStyle(crane);
-      ax = crane.offsetWidth * (parseFloat(cs.getPropertyValue('--crane-ax')) || 0.975);
-      ay = crane.offsetHeight * (parseFloat(cs.getPropertyValue('--crane-ay')) || 0.85);
-      if (aux) p.len = Math.max(40, aux.offsetHeight * 0.75);
-      p.g = 4.2 * heroEl.offsetHeight;
-    },
-    render(pose, dt) {
-      crane.style.transform = `translate3d(${pose.tx - ax}px, ${pose.py - ay}px, 0)`;
-      if (!aux || !aux.offsetHeight || !dt) return;
-      if (p.x === null) {
-        p.x = pose.tx;
-        p.y = pose.py;
-      }
-      const vx = (pose.tx - p.x) / dt;
-      const vy = (pose.py - p.y) / dt;
-      // aceleração da ponta da lança, suavizada (a medida quadro a quadro é ruidosa)
-      p.axl += (clamp((vx - p.vx) / dt, -20000, 20000) - p.axl) * Math.min(1, dt * 12);
-      p.ayl += (clamp((vy - p.vy) / dt, -20000, 20000) - p.ayl) * Math.min(1, dt * 12);
-      Object.assign(p, { x: pose.tx, y: pose.py, vx, vy });
-      const gEff = Math.max(0.25 * p.g, p.g - p.ayl);
-      // pouco atrito: oscila e assenta devagar; limitado a ~20° para não ficar caricato
-      const acc = -(gEff / p.len) * Math.sin(p.ang) - (p.axl / p.len) * Math.cos(p.ang) - 0.9 * p.vel;
-      p.vel += acc * dt;
-      p.ang = clamp(p.ang + p.vel * dt, -0.35, 0.35);
-      if (Math.abs(p.ang) === 0.35) p.vel *= 0.5;
-      aux.style.transform = `rotate(${-p.ang}rad)`;
-    },
-  };
-}
-
-/**
- * Telemetria do guindaste: prumo (sempre vertical, mesmo com o contêiner balançando),
- * altura até o pátio contando para zero e o alvo de pouso que trava em laranja.
- */
-function createHud(heroEl) {
-  const svg = q('.hero__hud', heroEl);
-  if (!svg) return null;
-  const plumb = q('.hud__plumb', svg);
-  const target = q('.hud__target', svg);
-  const alt = q('.hud__alt', svg);
-  const dock = q('.hud__dock', svg);
-  let G;
-  let ty = 0;
-  let locked = false;
+function createRouteFx(root) {
+  const svg = q('.hero__fx-svg', root);
+  const plan = q('.hero__route--plan', root);
+  const routeIn = q('.hero__route--in', root);
+  const routeOut = q('.hero__route--out', root);
+  const guide = q('.hero__guide', root);
+  const target = q('.hero__target', root);
+  const alt = q('.hero__alt', root);
+  const altValue = q('b', alt);
+  const nodeDrop = q('.hero__node--drop', root);
+  const nodeEnd = q('.hero__node--end', root);
+  let G = null;
+  let lastAlt = '';
+  let altW = 0;
 
   return {
-    el: svg,
     layout(geom) {
       G = geom;
-      svg.setAttribute('viewBox', `0 0 ${G.W} ${G.H}`);
-      ty = G.restCenterY + G.lowerPx + G.h / 2 + 0.012 * G.H;
-      const half = G.l / 2 + 0.03 * G.w;
-      const x0 = G.boxCX - half;
-      const x1 = G.boxCX + half;
-      const t = 0.035 * G.w;
-      target.setAttribute(
-        'd',
-        `M${x0} ${ty - t}V${ty}H${x0 + t}M${x1} ${ty - t}V${ty}H${x1 - t}M${G.boxCX} ${ty - 0.6 * t}V${ty + 0.6 * t}`,
-      );
-      dock.setAttribute('x', x1 - t);
-      dock.setAttribute('y', ty + 18);
+      const { W, H, dropX: x, dropY: y } = G;
+      const narrow = W < 768;
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      // Chegada pelo mar (esquerda) → ponto de descarga → saída para o país (direita)
+      const yIn = y - (narrow ? 0.05 : 0.11) * H;
+      const yOut = narrow ? y - 0.16 * H : 0.62 * H;
+      const dIn = `M ${-0.02 * W} ${yIn} C ${0.18 * W} ${yIn}, ${x - 0.2 * W} ${y}, ${x} ${y}`;
+      const dOut = `M ${x} ${y} C ${x + 0.16 * W} ${y}, ${W - 0.22 * W} ${yOut}, ${1.02 * W} ${yOut}`;
+      plan.setAttribute('d', `${dIn} ${dOut.replace(/^M [^C]+/, '')}`);
+      routeIn.setAttribute('d', dIn);
+      routeOut.setAttribute('d', dOut);
+      gsap.set(target, { x, y });
+      gsap.set(nodeDrop, { x: x + 22, y: y - nodeDrop.offsetHeight / 2 });
+      gsap.set(nodeEnd, { x: W - nodeEnd.offsetWidth - (narrow ? 12 : 0.03 * W), y: yOut - nodeEnd.offsetHeight - 10 });
+      altW = alt.offsetWidth;
     },
-    render(pt, pose) {
-      if (!G || !pt) return;
-      const top = Math.min(pt.y + 6, ty);
-      plumb.setAttribute('x1', pt.x);
-      plumb.setAttribute('x2', pt.x);
-      plumb.setAttribute('y1', top);
-      plumb.setAttribute('y2', ty);
-      const meters = Math.max(0, ((ty - pt.y) / G.H) * 32);
-      alt.textContent = `ALT ${fmt(meters, { decimals: 1 })} m`;
-      alt.setAttribute('x', pt.x + 12);
-      alt.setAttribute('y', (top + ty) / 2);
-      const on = pose.lower > 0.985 && meters < 0.6;
-      if (on !== locked) {
-        locked = on;
-        svg.classList.toggle('is-locked', on);
+    /** Prumo: da base do contêiner ao ponto de descarga, com a altura que falta. */
+    update(base) {
+      if (!G || !base) return;
+      const { dropX, dropY, h } = G;
+      const y1 = base.y + 6;
+      const gap = dropY - y1;
+      const show = gap > 18;
+      guide.setAttribute('x1', base.x);
+      guide.setAttribute('y1', y1);
+      guide.setAttribute('x2', dropX);
+      guide.setAttribute('y2', show ? dropY - 14 : y1);
+      const meters = Math.max(0, ((dropY - base.y) / h) * CONTAINER_HEIGHT_M);
+      const text = fmt(meters, 0, 1);
+      if (text !== lastAlt) {
+        lastAlt = text;
+        altValue.textContent = text;
       }
+      const mx = (base.x + dropX) / 2;
+      const my = (y1 + dropY) / 2;
+      const side = mx + 14 + altW > G.W - 8 ? -altW - 14 : 14;
+      alt.style.transform = `translate3d(${mx + side}px, ${my - 12}px, 0)`;
+      alt.style.opacity = show ? '' : '0';
     },
   };
 }
 
-export async function setupHero(textures) {
+async function setupHero(textures) {
   const heroEl = q('.hero');
   const cargo = q('.hero__cargo');
   const canvas = q('.hero__gl');
   const tag = q('.hero__tag');
-  const photo = await photoReady(q('.hero__cargo-img', cargo), cargo);
+  q('.hero__doors').style.setProperty('--door-tex', `url("${textures.doors.toDataURL('image/jpeg', 0.9)}")`);
 
   const driver = createDriver();
-  if (photo) driver.setShape(readShape(q('.hero__cargo-img', cargo)));
   driver.measure(heroEl, cargo);
   driver.state.introOffset = -1.1 * driver.geom.H;
+  const fx = createRouteFx(q('.hero__fx'));
 
   let view = null;
   let is3d = false;
-  if (photo) {
-    document.documentElement.classList.add('has-photo-cargo');
-    q('.hero__doors').style.setProperty('--door-tex', `url("${q('.hero__cargo-img', cargo).currentSrc}")`);
-  } else {
-    q('.hero__doors').style.setProperty('--door-tex', `url("${textures.doors.toDataURL('image/jpeg', 0.9)}")`);
-    if (hasWebGL()) {
-      try {
-        const mod = await withTimeout(import('../hero-3d.js'), 6000);
-        view = mod.createHero3D({ canvas, textures });
-        is3d = true;
-        document.documentElement.classList.add('has-3d');
-      } catch (err) {
-        console.warn('[vetor] Three.js indisponível, usando o vetor 2D:', err);
-      }
+  if (hasWebGL()) {
+    try {
+      const mod = await withTimeout(import('../hero-3d.js'), 6000);
+      view = mod.createHero3D({ canvas, textures });
+      is3d = true;
+      document.documentElement.classList.add('has-3d');
+    } catch (err) {
+      console.warn('[vetor] Three.js indisponível, usando o vetor 2D:', err);
     }
   }
-  if (!view) view = createHero2D(heroEl, cargo, { photo });
+  if (!view) view = createHero2D(cargo);
   view.layout(driver.geom);
-
-  const hud = createHud(heroEl);
-  hud?.layout(driver.geom);
-  const crane = createCrane(heroEl);
-  crane?.layout();
+  fx.layout(driver.geom);
 
   let running = false;
   let tagH = tag ? tag.offsetHeight : 0;
@@ -270,8 +154,7 @@ export async function setupHero(textures) {
     const pose = driver.update(dt);
     if (driver.state.progress > HERO_PHASES.approachEnd + 0.02) return;
     view.render(pose, driver.geom);
-    crane?.render(pose, dt);
-    hud?.render(view.basePoint(), pose);
+    if (pose.approach < 0.5) fx.update(view.basePoint());
     if (is3d && tag) {
       const pt = view.tagPoint();
       if (pt) {
@@ -282,8 +165,6 @@ export async function setupHero(textures) {
 
   return {
     is3d,
-    photo,
-    hud,
     start() {
       if (running) return;
       running = true;
@@ -300,163 +181,98 @@ export async function setupHero(textures) {
     setVelocity(v) {
       driver.state.vel = v;
     },
-    setPointer(nx) {
-      gsap.to(driver.state, { pointer: nx, duration: 0.6, ease: 'power2.out', overwrite: 'auto' }); // 'auto': não mata a queda (introOffset)
-    },
     refresh() {
       driver.measure(heroEl, cargo);
       view.layout(driver.geom);
-      hud?.layout(driver.geom);
-      crane?.layout();
+      fx.layout(driver.geom);
       tagH = tag ? tag.offsetHeight : 0;
     },
+    /** O contêiner chega pendurado de cima e se acomoda no cabo. */
     drop() {
-      driver.physics.kick(0.45, 0.2, 0.5); // a carga chega com um balanço curto (~6°), não um pêndulo solto
+      driver.physics.kick(0.9, 0.35, 0.7);
       return gsap.to(driver.state, { introOffset: 0, duration: 1.9, ease: 'power3.out' });
+    },
+    /** A rota planejada aparece, o ponto de descarga marca o chão. */
+    revealRoute() {
+      return gsap
+        .timeline()
+        .fromTo('.hero__fx-svg', { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.6, ease: 'expo.inOut' })
+        .from('.hero__target', { scale: 0, duration: 0.7, ease: 'back.out(2)' }, 0.7)
+        .from(qa('.hero__node, .hero__alt'), { opacity: 0, y: 8, duration: 0.6, ease: 'power3.out', stagger: 0.1 }, 0.9)
+        .set('.hero__fx-svg', { clearProps: 'clipPath' });
     },
   };
 }
 
 /**
- * Entrada cinematográfica, depois que a porta de enrolar sobe. Ordem (em segundos):
- *   0.00  céu: a câmera assenta (1.22 → 1) e a sombra das bordas chega
- *   0.00  grade de 12 colunas desce
- *   0.15  título letra a letra, de dentro da máscara de cada linha
- *   0.00  contêiner cai no cabo (física: balança e quica — js/hero-rig.js)
- *   0.35  cabeçalho
- *   0.55  textos secundários linha a linha (máscara), cada bloco no seu tempo
- *   0.75  CTA gira e entra com mola; depois pulsa duas vezes
- *   1.25  o título acusa o peso quando a carga assenta
- *   1.50  telemetria e etiqueta técnica
- * Os splits são desfeitos no fim: o HTML volta ao original (resize e leitores de tela).
+ * initHeroAnimation — monta o contêiner (3D ou 2D), as linhas e a linha do tempo da rolagem.
+ * Devolve o controlador do hero (ou null) para a entrada usar.
  */
-export function heroEntrance(hero) {
-  const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
-  const splits = [];
-
-  // Título: letra a letra, girando de leve a partir da base, dentro da máscara da linha
-  qa('.hero__lines .line').forEach((line) => line.classList.add('is-masked'));
-  const titleSplits = qa('.hero__lines .line__inner').map((el) => SplitText.create(el, { type: 'chars', tag: 'span', aria: 'none' }));
-  splits.push(...titleSplits);
-  const lineChars = titleSplits.map((sp) => sp.chars);
-
-  // Textos secundários: linha a linha, cada linha sobe de dentro da sua máscara
-  const secondary = qa('.hero__kicker, .hero__coords, .hero__lead').map((el) =>
-    SplitText.create(el, { type: 'lines', mask: 'lines', aria: 'none' }),
-  );
-  splits.push(...secondary);
-
-  tl.from('.hero__sky', { scale: 1.22, duration: 2.6 }, 0)
-    .from('.hero__shade', { opacity: 0, duration: 1.8, ease: 'power2.out' }, 0.1)
-    .from(qa('.grid-overlay span'), { scaleY: 0, transformOrigin: '50% 0%', duration: 1.3, ease: 'expo.inOut', stagger: 0.03 }, 0);
-  lineChars.forEach((chars, i) => {
-    tl.from(chars, { yPercent: 118, rotation: 7, transformOrigin: '0% 100%', duration: 1.35, stagger: 0.035 }, 0.15 + (i % 3) * 0.12);
-  });
-  tl.from('.site-header', { yPercent: -110, duration: 1 }, 0.35);
-  secondary.forEach((sp, i) => {
-    tl.from(sp.lines, { yPercent: 105, duration: 1, stagger: 0.07 }, 0.55 + i * 0.12);
-  });
-  tl.from('.hero__scroll', { y: 16, opacity: 0, duration: 0.8, ease: 'power3.out' }, 0.9)
-    .from('.hero__cta', { scale: 0, rotation: -140, duration: 1.1, ease: 'back.out(1.6)' }, 0.75)
-    .fromTo('.hero__cta', { '--ring': 0 }, { '--ring': 1, duration: 1.1, ease: 'power2.out', repeat: 1, repeatDelay: 0.25 }, 1.7)
-    // A carga assenta no cabo: o título acusa o peso com um pequeno solavanco
-    .to('.hero__title', { keyframes: { y: [0, 7, -2, 1, 0] }, duration: 0.5, ease: 'none' }, 1.25)
-    .from(qa('.hero__tag span'), { opacity: 0, x: -10, duration: 0.5, ease: 'power2.out', stagger: 0.08 }, 1.6);
-  if (hero?.hud) {
-    // O alvo de pouso "acende" depois que a carga chega e assenta
-    tl.fromTo(hero.hud.el, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.8, ease: 'power2.out' }, 1.5).from(
-      q('.hud__target', hero.hud.el),
-      { scale: 1.25, transformOrigin: '50% 50%', duration: 0.9 },
-      1.5,
-    );
-  }
-  tl.add(() => splits.forEach((sp) => sp.revert()));
-
-  // Seta "Role": pulso contínuo e discreto (pausa quando o hero sai da tela)
-  const arrow = q('.hero__scroll .icon');
-  if (arrow) idleLoops.push(gsap.to(arrow, { y: 5, duration: 0.8, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: 1.8 }));
-
-  if (hero) {
-    hero.start();
-    hero.drop();
-  }
-  return tl;
-}
-
-/**
- * Mouse (só mouse/trackpad): cada camada desloca na proporção da distância.
- *   céu (longe) pouco · título (meio) mais · guindaste: o carro acompanha e a carga balança.
- * A telemetria não se move: o prumo precisa continuar alinhado com o contêiner.
- */
-function initHeroPointer(heroEl, hero) {
-  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-  const sky = q('.hero__sky', heroEl);
-  const lines = qa('.hero__lines', heroEl);
-  const skyX = gsap.quickTo(sky, 'x', { duration: 1.4, ease: 'power3.out' });
-  const skyY = gsap.quickTo(sky, 'y', { duration: 1.4, ease: 'power3.out' });
-  const titleX = gsap.quickTo(lines, 'x', { duration: 1.1, ease: 'power3.out' });
-  const titleY = gsap.quickTo(lines, 'y', { duration: 1.1, ease: 'power3.out' });
-  const move = (nx, ny) => {
-    skyX(nx * -12);
-    skyY(ny * -8);
-    titleX(nx * -24);
-    titleY(ny * -10);
-    hero.setPointer(nx);
-  };
-  heroEl.addEventListener('pointermove', (e) => move(e.clientX / window.innerWidth - 0.5, e.clientY / window.innerHeight - 0.5), { passive: true });
-  heroEl.addEventListener('pointerleave', () => move(0, 0));
-}
-
-/**
- * Rolagem do hero fixado. Cada camada anda num ritmo (profundidade):
- *   céu 0.6 · título 0.85 · telemetria · contêiner (física) · interface
- */
-export function initHeroAnimation({ hero, setHeaderTheme }) {
+export async function initHeroAnimation({ textures, setHeaderTheme }) {
   const heroEl = q('.hero');
   const spacer = q('.hero-spacer');
+  let hero = null;
+  try {
+    hero = await setupHero(textures);
+  } catch (err) {
+    console.warn('[vetor] hero animado indisponível:', err);
+  }
   if (!hero) {
     spacer.style.display = 'none';
-    return;
+    return null;
   }
 
+  // Duas telas de rolagem por baixo do hero fixado: a seção 01 sobe enquanto as portas abrem
   const sizeSpacer = () => {
-    spacer.style.height = `${Math.round(heroEl.offsetHeight * 1.5)}px`;
+    spacer.style.height = `${Math.round(heroEl.offsetHeight * 2)}px`;
   };
   sizeSpacer();
   ScrollTrigger.addEventListener('refreshInit', sizeSpacer);
 
-  const { holdEnd, lowerEnd, approachEnd: doors } = HERO_PHASES;
+  const { holdEnd: hold, lowerEnd: lower, approachEnd: doors, doorsEnd } = HERO_PHASES;
   const wide = qa('.hero__lines--wide .line');
   const stack = qa('.hero__lines--stack .line');
-  const ui = q('.hero__ui');
+  const swing = doorsEnd - doors;
+  // Porta pesada: destrava (folga de poucos graus) e depois abre ganhando velocidade
+  const doorSwing = (dir) => ({
+    '0%': { rotationY: 0, '--shade': 0 },
+    '10%': { rotationY: 4 * dir, '--shade': 0.05 },
+    '100%': { rotationY: 100 * dir, '--shade': 0.6 },
+    easeEach: 'power1.in',
+  });
 
   const tl = gsap.timeline({ defaults: { ease: 'none' } });
-  tl
-    // Título (camada média): as linhas abrem caminho para a carga e afundam um pouco
-    .to(wide[0], { xPercent: -18, duration: lowerEnd }, 0)
-    .to(wide[1], { xPercent: 18, duration: lowerEnd }, 0)
-    .to(stack, { xPercent: (i) => (i % 2 ? 24 : -24), duration: lowerEnd }, 0)
-    .to('.hero__title', { yPercent: 6, duration: lowerEnd }, 0)
-    // Interface (camada da frente): some antes da carga descer; cada bloco sobe no seu ritmo
-    // (yPercent aqui, y/opacity na entrada: as duas animações não disputam a mesma propriedade)
-    .to(ui, { autoAlpha: 0, duration: lowerEnd * 0.55 }, holdEnd * 0.4)
-    .to(q('.hero__kicker', ui), { yPercent: -170, duration: lowerEnd * 0.6 }, 0)
-    .to(q('.hero__coords', ui), { yPercent: -120, duration: lowerEnd * 0.6 }, 0)
-    .to(q('.hero__lead', ui), { yPercent: -45, duration: lowerEnd * 0.6 }, 0)
-    .to(q('.hero__scroll', ui), { yPercent: 120, duration: lowerEnd * 0.4 }, 0)
-    .to('.hero__tag', { autoAlpha: 0, duration: 0.05 }, lowerEnd * 0.72)
-    // Céu (fundo): quase parado, só desce um pouco (a escala é da entrada; aqui não disputa)
-    .to('.hero__sky', { yPercent: 9, duration: doors }, 0)
-    // Telemetria some quando o contêiner começa a girar para a câmera
-    .to('.hero__hud', { autoAlpha: 0, duration: 0.05 }, lowerEnd + 0.02)
-    .to('.hero__title', { autoAlpha: 0.12, scale: 0.9, transformOrigin: '50% 80%', duration: doors - lowerEnd }, lowerEnd)
-    .to('.hero__sky', { filter: 'brightness(0.32)', duration: doors - lowerEnd }, lowerEnd)
-    // As portas (DOM) assumem exatamente onde a face 3D cobre a tela
-    .set('.hero__doors', { visibility: 'visible' }, doors)
-    .set(['.hero__sky', '.hero__shade', '.hero__title', '.hero__gl', '.hero__cargo', '.hero__rope', '.hero__ui', '.hero__hud', '.hero__crane'], { autoAlpha: 0 }, doors)
-    .fromTo('.door--left', { rotationY: 0, '--shade': 0 }, { rotationY: -100, '--shade': 0.6, duration: 0.3, ease: 'power2.in' }, doors + 0.012)
-    .fromTo('.door--right', { rotationY: 0, '--shade': 0 }, { rotationY: 100, '--shade': 0.6, duration: 0.3, ease: 'power2.in' }, doors + 0.012)
-    .to('.hero__doors', { autoAlpha: 0, duration: 0.05 }, doors + 0.3)
+
+  // 1 · Parado: a interface sai em velocidades diferentes; a carga ainda não se mexe
+  tl.to('.hero__kicker, .hero__coords', { y: -36, autoAlpha: 0, duration: hold * 0.7 }, 0)
+    .to('.hero__lead', { y: -80, autoAlpha: 0, duration: hold * 0.85 }, 0)
+    .to('.hero__cta', { yPercent: -110, rotation: 30, autoAlpha: 0, duration: hold }, 0)
+    .to('.hero__scroll', { autoAlpha: 0, duration: hold * 0.4 }, 0)
+    .to('.hero__route--in', { strokeDashoffset: 0, autoRound: false, duration: hold * 0.9 }, hold * 0.05);
+
+  // 2 · Profundidade: céu quase parado, título em velocidade média, contêiner é o protagonista
+  tl.to('.hero__sky', { yPercent: -3, duration: lower }, 0)
+    // no celular a descida é curta: o título sobe mais, como uma câmera acompanhando a carga
+    .to('.hero__title', { yPercent: () => (window.innerWidth < 768 ? -16 : -6), duration: lower }, 0)
+    .to(wide[0], { xPercent: -18, duration: lower - hold * 0.5 }, hold * 0.5)
+    .to(wide[1], { xPercent: 18, duration: lower - hold * 0.5 }, hold * 0.5)
+    .to(stack, { xPercent: (i) => (i % 2 ? 24 : -24), duration: lower - hold * 0.5 }, hold * 0.5)
+    // 3 · Descida: a rota de saída é desenhada enquanto a carga desce
+    .to('.hero__route--out', { strokeDashoffset: 0, autoRound: false, duration: lower - hold }, hold)
+    .to('.hero__tag', { autoAlpha: 0, duration: 0.03 }, hold + (lower - hold) * 0.6);
+
+  // 4 · Aproximação: a câmera encosta na carga, o cenário escurece e as linhas ficam para trás
+  tl.to('.hero__fx', { autoAlpha: 0, scale: 1.3, transformOrigin: '50% 80%', duration: (doors - lower) * 0.45 }, lower)
+    .to('.hero__title', { autoAlpha: 0.12, scale: 0.9, transformOrigin: '50% 80%', duration: doors - lower }, lower)
+    .to('.hero__dim', { opacity: 0.68, duration: doors - lower }, lower);
+
+  // 5 · Portas: o DOM assume exatamente onde a face 3D cobre a tela e abre para a seção 01
+  tl.set('.hero__doors', { visibility: 'visible' }, doors)
+    .set(['.hero__sky', '.hero__shade', '.hero__dim', '.hero__title', '.hero__fx', '.hero__gl', '.hero__cargo', '.hero__ui'], { autoAlpha: 0 }, doors)
+    .to('.door--left', { keyframes: doorSwing(-1), duration: swing * 0.94 }, doors + 0.01)
+    .to('.door--right', { keyframes: doorSwing(1), duration: swing * 0.94 }, doors + 0.014)
+    .fromTo('.hero__doors', { scale: 1 }, { scale: 1.12, duration: swing, ease: 'power1.in' }, doors)
+    .to('.hero__doors', { autoAlpha: 0, duration: 0.025 }, doorsEnd - 0.02)
     .set({}, {}, 1);
 
   ScrollTrigger.create({
@@ -466,20 +282,16 @@ export function initHeroAnimation({ hero, setHeaderTheme }) {
     pin: true,
     pinSpacing: false,
     scrub: true,
+    invalidateOnRefresh: true,
     animation: tl,
     onUpdate: (self) => {
       hero.setProgress(self.progress);
       hero.setVelocity(self.getVelocity());
-      setHeaderTheme(self.progress > doors + 0.14 ? 'light' : 'dark');
+      setHeaderTheme(self.progress > doors + swing * 0.6 ? 'light' : 'dark');
     },
-    onToggle: (self) => {
-      if (self.isActive) hero.start();
-      else hero.stop();
-      idleLoops.forEach((loop) => (self.isActive ? loop.resume() : loop.pause()));
-    },
+    onToggle: (self) => (self.isActive ? hero.start() : hero.stop()),
     onRefresh: () => hero.refresh(),
   });
 
-  initHeroPointer(heroEl, hero);
+  return hero;
 }
-

@@ -1,31 +1,22 @@
 /**
- * Seções 05–08, rodapé e comportamentos gerais (cabeçalhos de seção, fade-ups, encaixe).
+ * Seções finais: processo (a carga percorre a rota), clientes (letreiro que
+ * responde à velocidade), rastreamento (ticket impresso), contato e rodapé.
  */
-import { q, qa, clamp } from './utils.js';
-import { maskLines, splitInner, labelFromText, riseWords } from './text.js';
-import { countUp } from './statistics.js';
+import { q, qa, clamp, maskLines, splitInner, riseWords, labelFromText } from './utils.js';
 
-const { gsap, ScrollTrigger } = window;
+const { gsap, ScrollTrigger, SplitText } = window;
 
-/* 05 PROCESSO — a carga percorre a rota; cada etapa acende e o odômetro de KM conta até ela */
 export function initProcess() {
   riseWords(q('.process__title'));
   const steps = q('.route__steps');
   const items = qa('.step', steps);
   const nodes = items.map((s) => q('.step__node', s));
-  const kms = items.map((s) => {
-    const el = q('.step__km', s);
-    const km = Number(el.textContent.replace(/\D/g, ''));
-    el.setAttribute('aria-label', el.textContent.trim());
-    el.innerHTML = `<span aria-hidden="true">KM </span><span aria-hidden="true"></span>`;
-    const tween = countUp(el.lastChild, { to: km, pad: 4, group: false, duration: 0.9, ease: 'power2.out', paused: true });
-    tween.progress(1);
-    return tween;
-  });
   const horizontal = window.matchMedia('(min-width: 900px)');
   let marks = [];
   const measure = () => {
-    marks = items.map((s) => (horizontal.matches ? s.offsetLeft / steps.offsetWidth : s.offsetTop / steps.offsetHeight));
+    marks = items.map((s) =>
+      horizontal.matches ? s.offsetLeft / steps.offsetWidth : s.offsetTop / steps.offsetHeight,
+    );
   };
 
   gsap.set(items, { opacity: 0.25 });
@@ -43,7 +34,6 @@ export function initProcess() {
         ease: on ? 'back.out(3)' : 'power2.out',
         overwrite: 'auto',
       });
-      if (on) kms[i].restart();
     });
   };
   measure();
@@ -68,7 +58,6 @@ export function initProcess() {
   });
 }
 
-/* 06 CLIENTES — letreiro que reage à velocidade + depoimentos encaixando */
 export function initClients() {
   riseWords(q('.clients__title'));
   const marquee = q('.marquee');
@@ -77,14 +66,11 @@ export function initClients() {
   loop.totalTime(loop.duration() * 40); // permite tocar ao contrário sem parar no início
   const skew = gsap.quickTo(tracks, 'skewX', { duration: 0.4, ease: 'power3.out' });
 
-  // Fora da tela o letreiro para (não gasta quadro à toa)
   ScrollTrigger.create({
     trigger: marquee,
     start: 'top bottom',
     end: 'bottom top',
-    onToggle: (self) => (self.isActive ? loop.resume() : loop.pause()),
     onUpdate: (self) => {
-      if (loop.paused()) loop.resume();
       const v = self.getVelocity();
       const dir = self.direction;
       const boost = Math.min(Math.abs(v) / 280, 6);
@@ -110,7 +96,6 @@ export function initClients() {
   });
 }
 
-/* 07 RASTREAMENTO — digitação + ticket impresso */
 export function initTracking() {
   riseWords(q('.tracking__title'));
   const input = q('#track-code');
@@ -140,7 +125,6 @@ export function initTracking() {
     .add(() => q('.ticket__status', ticket).classList.add('is-live'), 1.6);
 }
 
-/* 08 CONTATO */
 export function initContact() {
   const title = q('.contact__title');
   labelFromText(title);
@@ -170,10 +154,9 @@ export function initContact() {
   });
 }
 
-/* RODAPÉ — a marca sobe da base */
 export function initFooter() {
   const brand = q('.site-footer__brand');
-  const split = window.SplitText.create(brand, { type: 'chars', tag: 'span', aria: 'none' });
+  const split = SplitText.create(brand, { type: 'chars', tag: 'span', aria: 'none' });
   gsap.from(split.chars, {
     yPercent: 100,
     ease: 'none',
@@ -186,47 +169,5 @@ export function initFooter() {
     duration: 0.9,
     ease: 'power3.out',
     scrollTrigger: { trigger: '.site-footer', start: 'top 80%', once: true },
-  });
-}
-
-/* GERAIS */
-export function initSectionHeads({ skip = [] } = {}) {
-  qa('.section-head')
-    .filter((head) => !skip.some((sel) => head.closest(sel)))
-    .forEach((head) => {
-      const rule = q('.section-head__rule', head);
-      const parts = [...head.children].filter((el) => el !== rule);
-      gsap
-        .timeline({ scrollTrigger: { trigger: head, start: 'top 90%', once: true } })
-        .from(rule, { scaleX: 0, transformOrigin: '0% 50%', duration: 1.1, ease: 'expo.inOut' })
-        .from(parts, { y: 14, opacity: 0, duration: 0.6, ease: 'power3.out', stagger: 0.06 }, 0.15);
-    });
-}
-
-export function initFadeUps() {
-  const els = [
-    ...qa('[data-anim="fade-up"]').filter((el) => !el.closest('.hero') && !el.closest('.about__text')),
-    ...qa('.services__hint, .tracking__portal, .site-footer__nav, .site-footer__contact'),
-  ];
-  gsap.set(els, { y: 36, opacity: 0 });
-  ScrollTrigger.batch(els, {
-    start: 'top 90%',
-    once: true,
-    onEnter: (batch) => gsap.to(batch, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', stagger: 0.08 }),
-  });
-}
-
-/** Blocos escuros e coloridos "encaixam" na tela ao entrar. */
-export function initEncaixe() {
-  qa('#modais, #numeros, #clientes, #rastreamento, #contato, .site-footer').forEach((sec) => {
-    gsap.fromTo(
-      sec,
-      { clipPath: 'inset(9% 5% 0% 5%)' },
-      {
-        clipPath: 'inset(0% 0% 0% 0%)',
-        ease: 'none',
-        scrollTrigger: { trigger: sec, start: 'top bottom', end: 'top 22%', scrub: true },
-      },
-    );
   });
 }

@@ -1,11 +1,48 @@
 /**
- * Microinterações de ponteiro (só mouse/trackpad, nunca no toque):
- * cursor quadrado com rótulo, botões magnéticos e foto do "Sobre" respondendo ao ponteiro.
- * (A profundidade do hero com o mouse fica em animations/hero.js.)
+ * Camada comum: cabeçalhos de seção, blocos que sobem, seções escuras que
+ * "encaixam" ao entrar, cursor/magnético e âncoras com rolagem suave.
  */
 import { q, qa } from './utils.js';
 
-const { gsap } = window;
+const { gsap, ScrollTrigger } = window;
+
+export function initSectionHeads() {
+  qa('.section-head').forEach((head) => {
+    const rule = q('.section-head__rule', head);
+    const parts = [...head.children].filter((el) => el !== rule);
+    gsap
+      .timeline({ scrollTrigger: { trigger: head, start: 'top 90%', once: true } })
+      .from(rule, { scaleX: 0, transformOrigin: '0% 50%', duration: 1.1, ease: 'expo.inOut' })
+      .from(parts, { y: 14, opacity: 0, duration: 0.6, ease: 'power3.out', stagger: 0.06 }, 0.15);
+  });
+}
+
+export function initFadeUps() {
+  const els = [
+    ...qa('[data-anim="fade-up"]').filter((el) => !el.closest('.hero, .about__text')),
+    ...qa('.services__hint, .tracking__portal, .site-footer__nav, .site-footer__contact'),
+  ];
+  gsap.set(els, { y: 36, opacity: 0 });
+  ScrollTrigger.batch(els, {
+    start: 'top 90%',
+    once: true,
+    onEnter: (batch) => gsap.to(batch, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', stagger: 0.08 }),
+  });
+}
+
+export function initSectionEntrances() {
+  qa('#modais, #numeros, #clientes, #rastreamento, #contato, .site-footer').forEach((sec) => {
+    gsap.fromTo(
+      sec,
+      { clipPath: 'inset(9% 5% 0% 5%)' },
+      {
+        clipPath: 'inset(0% 0% 0% 0%)',
+        ease: 'none',
+        scrollTrigger: { trigger: sec, start: 'top bottom', end: 'top 22%', scrub: true },
+      },
+    );
+  });
+}
 
 export function initPointer() {
   if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
@@ -51,22 +88,9 @@ export function initPointer() {
       gsap.to(el, { x: 0, y: 0, duration: 0.9, ease: 'elastic.out(1, 0.35)', overwrite: true });
     });
   });
-
-  // Foto do "Sobre": a imagem desliza um pouco dentro da moldura, como uma janela
-  const media = q('.about__media');
-  const shift = q('img', media);
-  if (media && shift) {
-    const ix = gsap.quickTo(shift, 'x', { duration: 0.9, ease: 'power3.out' });
-    media.addEventListener('pointermove', (e) => {
-      const r = media.getBoundingClientRect();
-      ix(((e.clientX - r.left) / r.width - 0.5) * -14);
-    });
-    media.addEventListener('pointerleave', () => ix(0));
-  }
 }
 
-/* Âncoras com rolagem suave */
-export function bindAnchors({ smoother }) {
+export function initAnchors({ smoother }) {
   document.addEventListener('click', (e) => {
     const a = e.target.closest('a[href^="#"]');
     if (!a || e.defaultPrevented) return;

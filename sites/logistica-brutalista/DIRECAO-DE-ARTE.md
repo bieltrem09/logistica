@@ -194,6 +194,7 @@ small orange accents on the wingtips, isolated on a flat solid neutral grey back
 no shadow, photorealistic, 8k --ar 1:1 --style raw --v 7
 ```
 Remova o fundo e exporte em PNG com alfa. Se a proporção final mudar, atualize `width`/`height` do `<img>` correspondente.
+Mantenha a orientação dos prompts (navio com a proa para cima, caminhão com a cabine para baixo, avião com o nariz para cima): a seção 4 gira cada veículo na direção da rota a partir dela (`FACING` em `js/animations/journey.js`).
 
 ### og-cover.jpg
 Com as imagens finais no lugar, faça um print do hero em 1200×630 e salve em `assets/img/og-cover.jpg`.
@@ -204,28 +205,39 @@ Com as imagens finais no lugar, faça um print do hero em 1200×630 e salve em `
 
 Regra: cada movimento vem do mundo da logística. Nada de fade genérico.
 
+A página conta a viagem de **uma** carga: o contêiner laranja VTRU 204816-3 do hero é o mesmo que o usuário acompanha no navio, no caminhão e no avião, até o ponto azul de destino, que vira o azul da seção 5.
+
 | Momento | O que acontece | Por quê |
 |---|---|---|
-| **Entrada** | Tela preta em lâminas de aço, manifesto de carga sendo conferido (Carga, Lacre, Rota, Status), contador 000→100 e um trolley laranja correndo no trilho. No fim, a porta de enrolar sobe. | Abrir a doca: o site começa como um galpão abrindo. |
-| **Hero** | O guindaste tensiona o cabo e o carro anda antes da carga (antecipação). Rolando, o contêiner desce com física real (pêndulo com suspensão móvel, giro no cabo, cabo elástico); o gancho segue o cabo e as lingas com a carga atrasam. Telemetria: prumo laranja sempre vertical, altura contando até 0,0 m e alvo de pouso que trava. Camadas em ritmos diferentes (céu, título, telemetria, carga, interface; o céu também segue o mouse). | O pedido: carga e corda com cara de física. |
-| **Hero → 01** | O contêiner gira, vem até a câmera e a face das portas cobre a tela. As portas (agora em DOM, mesma textura) abrem e revelam a seção 01 subindo por trás. | O conteúdo é a carga dentro do contêiner. |
-| **01 Sobre** | O manifesto entra enquanto as portas abrem, ligado à rolagem: a câmera entra na carga (1.08 → 1), as palavras sobem linha a linha, cada linha num ritmo; o "NÃO." bate como carimbo. A ficha entra pela lateral: texto na máscara, linhas desenhadas, números contando; foto abre de baixo e assenta. | Tom direto, impacto seco. |
-| **02 Modais** | "TRÊS MODAIS." chega por esteira (letras entrando pela direita); "UM CONTATO." cai como carimbo. Antes de fixar, as três faixas sobem como blocos de mapa, cada uma no seu tempo. | Esteira e carimbo de despacho. |
-| **02 Jornada** | Fixado. Um capítulo por modal: a faixa abre, a rota planejada aparece tracejada, o veículo percorre a rota com perfil de velocidade (acelera, cruzeiro, freia) e a linha laranja se desenha atrás dele. A telemetria é derivada do mesmo perfil. O contêiner VTRU 204816-3 (o do hero) sai do navio no cais, espera o caminhão, desce na doca do aeroporto, espera o avião e pousa no destino. As faixas fechadas guardam o mini-mapa da rota feita. No fim, o tríptico se recompõe com as três rotas. | Acompanhar a carga. |
-| **03 Serviços** | O guindaste baixa o contêiner azul dentro de "SERVIÇOS": a rolagem define a altura e uma mola dá massa (sobrepassa e assenta). O cabo solta, o contêiner desliza cortando letras e cresce até virar um campo azul que revela a palavra inteira em contorno. | O azul vira objeto, depois campo. |
-| **03 Pátio** | Carrossel fixado: o contêiner que sai recua (0.94), o que chega vem de mais perto (1.04 → 1); o conteúdo atrasa em relação à chapa. Pendurados no cabo, todos balançam com a velocidade da rolagem e assentam como pêndulo. Para em cada contêiner. | Pátio de contêineres. |
-| **04 Números** | "PESO PESADO." cai com quique pesado; "PRAZO LEVE." desliza rápido. Contadores precisos: valores grandes sobem por ordem de grandeza (0 → 12 → 120 → 1.200 → 12.000), porcentagens em linha (0% → 98,7%), largura travada no valor final. | Peso pesado, prazo leve, literalmente. |
-| **05 Processo** | A linha da rota se desenha com a rolagem e um bloco laranja (a carga) percorre o caminho; cada etapa acende quando a carga chega e o KM conta até ela. | Rota de verdade. |
-| **06 Clientes** | Letreiro contínuo que acelera, inverte e inclina com a velocidade da rolagem; depoimentos chegam girando e encaixam. | Movimento de pátio. |
-| **07 Rastreio** | O código de exemplo é digitado no campo; o ticket sai "impresso" em passos; o status pisca. | Impressora térmica de terminal. |
-| **08 Contato** | "VAMOS" cai pesado, "CARREGAR?" sobe; o botão do WhatsApp entra com mola. | Fechamento com peso. |
+| **Entrada** | Tela preta em lâminas de aço, manifesto de carga sendo conferido (Carga, Lacre, Rota, Status), contador 000→100 e um trolley laranja correndo no trilho. No fim, a porta de enrolar sobe; a rota planejada do hero se desenha e o ponto de descarga aparece. | Abrir a doca: o site começa como um galpão abrindo. |
+| **Hero: repouso (0–18%)** | O contêiner fica parado, só respira com o vento. A interface sai em velocidades diferentes, a rota de chegada (mar → Santos) é desenhada e, no fim, o guincho recolhe um palmo de cabo: o suporte reage antes da carga. | Movimento → pausa → informação. Estrutura → suporte → carga. |
+| **Hero: descida (18–56%)** | A carga desce, ganha velocidade, inclina, balança, corrige e segue. O gancho segue o cabo e o contêiner atrasa em ângulo e em altura (as lingas esticam e devolvem). Uma linha de prumo liga a base do contêiner ao ponto de descarga com a altura em metros; a rota de saída (Santos → 27 UF) é desenhada. Céu quase parado, título em velocidade média, linhas presas ao chão. | Peso, inércia e balanço com física real (pêndulo com suspensão móvel, giro no cabo, cabo elástico, folga das lingas). |
+| **Hero: aproximação (56–78%)** | O contêiner gira e vem até a câmera; o cenário escurece, as linhas ficam para trás e o título se apaga. | A câmera encosta na carga. |
+| **Hero → 2 (78–96%)** | As portas (DOM, mesma textura) destravam com uma folga de poucos graus e abrem ganhando velocidade, com a câmera atravessando; a seção 2 sobe por trás. | O conteúdo é a carga dentro do contêiner. |
+| **2 Manifesto** | Palavras sobem de dentro de cada linha conforme a rolagem; as linhas chegam de lados alternados em velocidades diferentes; a fita laranja corre e o "NÃO." assenta. Ao sair, as linhas continuam deslizando devagar. | Leitura no ritmo do usuário. |
+| **3 Sobre** | Linguagem lateral, de documento impresso: linhas do texto correm da esquerda dentro da máscara, a ficha técnica é traçada linha a linha e os números (340 veículos, 48.000 m²) contam. A foto abre de baixo e assenta de 1,08 → 1, com parallax leve. | Diferente da seção 2, mesma família. |
+| **4 Entrada** | "TRÊS MODAIS." chega por esteira e "UM CONTATO." é carimbado. Fixado o tríptico, o mapa se desenha antes de qualquer veículo: rota planejada tracejada, porto, terminal e destino ●. | Preparar a viagem. |
+| **4 Mar** | A faixa do mar abre. O navio entra pela base e segue a rota curva, girando na direção do trajeto, com balanço mínimo de água e rastro que cresce com a velocidade; a rota feita fica laranja; telemetria em nós e milhas. A etiqueta da carga acompanha o navio. | Navegar, não deslizar. |
+| **4 Transbordo** | O navio atraca antes do porto; a linha laranja segue até o nó; o contêiner laranja sai do navio e aparece na carreta do caminhão; a câmera (acordeão) segue a rota para a faixa da terra e o navio sai menor. | "A carga saiu do navio e continua por terra." |
+| **4 Terra** | O caminhão acelera, faz as curvas inclinando e vibra na suspensão conforme anda; freia no terminal. | Peso de estrada. |
+| **4 Embarque → Ar** | A carga deixa o caminhão no terminal, a faixa do ar abre, nuvens entram. O avião parte pequeno, acelera, sobe (cresce e a sombra se afasta), inclina nas curvas e chega ao destino ●, onde encolhe até sumir. | Terra → ar → entregue. |
+| **4 Final** | A câmera se afasta: o tríptico volta a terços e diminui, mostrando a rota inteira atravessando as três faixas, navio e caminhão parados nos pontos de troca e o ● azul pulsando. | Visão do mapa; continuidade para a seção 5. |
+| **5 Serviços** | O azul nasce como um ponto no meio de "SERVIÇOS", vira círculo, se estica em cápsula e ganha os cantos de contêiner, cortando as letras (que aparecem em contorno por dentro); depois desliza pela palavra. Só clip-path e transform. | O ● de destino vira o bloco azul. |
+| **6 Pátio** | Carrossel horizontal fixado: o contêiner em foco fica pendurado no cabo; o que sai vai a 0,96 e escurece, o que entra vem de 1,04 → 1 descendo alguns px; inclinação máxima de 1,5–1,8°; o nome anda um pouco atrás da caixa; o contador do HUD rola para o novo número. Encaixa em cada contêiner. | Limpo, industrial, sem cansar. |
+| **Números** | "PESO PESADO." cai acelerando e o título sente o impacto; "PRAZO LEVE." chega deslizando. Os números contam de 0 até o valor exato: milhares em escala logarítmica (0 → 1 → 12 → 120 → 1.200 → 12.000), porcentagens com easing (0 → 15 → 42 → 78 → 98,7), "24/7" nas duas partes. A largura final é reservada para os sufixos não andarem. | Dados da operação, precisos. |
+| **Processo** | A linha da rota se desenha com a rolagem e um bloco laranja (a carga) percorre o caminho; cada etapa acende quando a carga chega. | Rota de verdade. |
+| **Clientes** | Letreiro contínuo que acelera, inverte e inclina com a velocidade da rolagem; depoimentos chegam girando e encaixam. | Movimento de pátio. |
+| **Rastreio** | O código de exemplo é digitado no campo; o ticket sai "impresso" em passos; o status pisca. | Impressora térmica de terminal. |
+| **Contato** | "VAMOS" cai pesado, "CARREGAR?" sobe; o botão do WhatsApp entra com mola. | Fechamento com peso. |
 | **Rodapé** | A palavra VETOR sobe da base enquanto a página termina. | Assinatura. |
 | **Transição de blocos** | Seções escuras e coloridas entram recortadas e se expandem até a borda. | Bloco duro encaixando no lugar. |
-| **Ponteiro** | Botões principais magnéticos; quadrado laranja seguindo o cursor, com rótulo em áreas de rolagem. | Só em mouse; nunca no toque. |
+| **Microinterações** | Botões principais magnéticos; quadrado laranja seguindo o cursor, com rótulo em áreas de rolagem; seta dos botões avança no hover; sublinhado do menu se desenha; pulso lento no ponto de descarga e no destino. | Só em mouse; nunca no toque. |
+
+**Celular:** a mesma narrativa, simplificada. No hero o contêiner desce pouco (já começa baixo) e o título sobe mais, como uma câmera acompanhando; as etiquetas técnicas saem e ficam só as linhas. Na seção 4 cada modal ocupa a tela, a trilha desliza para o próximo trecho e as rotas passam pela faixa livre entre a telemetria e o texto.
 
 **Acessibilidade e desempenho:** com `prefers-reduced-motion` nada disso roda e o site estático completo aparece. Títulos animados mantêm o texto para leitores de tela. O WebGL só renderiza enquanto o hero está na tela. Sem WebGL, o mesmo movimento roda no vetor 2D do contêiner.
 
-**Referência para a próxima rodada:** o 21st.dev e o Dribbble foram sugeridos como fonte de transições. Preferi derivar cada uma do próprio assunto (doca, portas, esteira, carimbo, odômetro, ticket) para não cair em efeito de template.
+**Referências:** o 21st.dev e o Dribbble foram sugeridos como fonte de transições. Preferi derivar cada uma do próprio assunto (doca, guindaste, portas, rota, transbordo, contador, ticket) para não cair em efeito de template. A skill /web-animation-skills não estava instalada nesta sessão; as técnicas seguem GSAP/ScrollTrigger diretamente.
 
 ---
 
